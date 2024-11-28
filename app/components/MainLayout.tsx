@@ -4,9 +4,8 @@ import { Footer } from './Footer'
 import { Button } from "@/components/ui/button"
 import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 // Define navigation items in a shared location (could be moved to a constants file)
 export const navItems = [
@@ -18,7 +17,6 @@ export const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const pathname = usePathname()
-  const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
