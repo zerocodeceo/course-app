@@ -23,7 +23,20 @@ interface YouTubeEvent {
 declare global {
   interface Window {
     YT: {
-      Player: new (element: HTMLElement, config: any) => YouTubePlayer
+      Player: new (element: HTMLElement, config: {
+        videoId: string,
+        width: string | number,
+        height: string | number,
+        playerVars?: {
+          modestbranding?: number,
+          rel?: number,
+          start?: number
+        },
+        events?: {
+          onReady?: (event: YouTubeEvent) => void,
+          onStateChange?: (event: YouTubeEvent) => void
+        }
+      }) => YouTubePlayer
       PlayerState: {
         PLAYING: number
         ENDED: number
