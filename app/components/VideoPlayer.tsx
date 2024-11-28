@@ -109,6 +109,8 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
     }
 
     const initPlayer = () => {
+      if (!containerRef.current) return
+      
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId,
         width: '100%',
