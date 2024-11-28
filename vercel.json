@@ -1,0 +1,5 @@
+{
+  "ignoreCommand": "!backend/**/*",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
+} 
