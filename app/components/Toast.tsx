@@ -1,11 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
 
-type CustomEventDetail = {
-  message: string
-  type: 'success' | 'error'
-}
-
 export function showToast(message: string, type: 'success' | 'error' = 'success') {
   const event = new CustomEvent('show-toast', { detail: { message, type } })
   window.dispatchEvent(event)
@@ -15,7 +10,7 @@ export function ToastContainer() {
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: string }>>([])
 
   useEffect(() => {
-    const handleShowToast = (event: CustomEvent<CustomEventDetail>) => {
+    const handleShowToast = (event: CustomEvent<{ message: string; type: string }>) => {
       const { message, type } = event.detail
       const id = Date.now()
       setToasts(prev => [...prev, { id, message, type }])

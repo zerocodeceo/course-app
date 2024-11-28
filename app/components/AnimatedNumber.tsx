@@ -12,7 +12,6 @@ export function AnimatedNumber({ value, duration = 2000, prefix = '' }: Animated
 
   useEffect(() => {
     const startTime = Date.now()
-    const endTime = startTime + duration
 
     const updateNumber = () => {
       const now = Date.now()
