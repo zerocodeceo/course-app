@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users, DollarSign, Eye, TrendingUp, PlayCircle, Globe2, Layers, Lock } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ResponsiveContainer } from 'recharts'
 import { MainLayout } from '../components/MainLayout'
 import SimpleWorldMap from '../components/SimpleWorldMap'
 import dynamic from 'next/dynamic'
