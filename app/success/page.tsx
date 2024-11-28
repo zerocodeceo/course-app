@@ -40,7 +40,7 @@ export default function SuccessPage() {
         setTimeout(() => {
           router.push('/')
         }, 2000)
-      } catch (_error) {
+      } catch {
         setError('Failed to verify payment')
       } finally {
         setLoading(false)
