@@ -39,11 +39,20 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
+// Add environment-based URLs
+const CLIENT_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://zerocodeceo.vercel.app'
+  : 'http://localhost:3000'
+
+const SERVER_URL = process.env.NODE_ENV === 'production'
+  ? 'https://course-app-grij.onrender.com'
+  : 'http://localhost:8000'
+
 // Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:8000/auth/google/callback"
+    callbackURL: `${SERVER_URL}/auth/google/callback`
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -87,7 +96,7 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect('http://localhost:3000')
+    res.redirect(CLIENT_URL)
   }
 )
 
@@ -100,7 +109,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect('http://localhost:3000')
+    res.redirect(CLIENT_URL)
   })
 })
 
