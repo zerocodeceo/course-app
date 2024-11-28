@@ -22,7 +22,7 @@ function SuccessContent() {
       }
 
       try {
-        const response = await fetch('http://localhost:8000/verify-payment', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/verify-payment`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

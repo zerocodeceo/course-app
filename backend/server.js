@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
   credentials: true
 }))
 
@@ -31,7 +31,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost'
   }
 }))
 

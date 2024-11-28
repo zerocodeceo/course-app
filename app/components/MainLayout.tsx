@@ -24,7 +24,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleLogout = () => {
-    window.location.href = 'http://localhost:8000/auth/logout'
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`
   }
 
   const isActive = (path: string) => pathname === path
@@ -110,7 +110,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <Button 
-              onClick={() => window.location.href = 'http://localhost:8000/auth/google'}
+              onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Login with Google

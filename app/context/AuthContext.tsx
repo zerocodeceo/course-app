@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auth/status', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
         credentials: 'include'
       })
       const data = await response.json()
