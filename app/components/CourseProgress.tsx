@@ -1,6 +1,6 @@
 "use client"
 import { Progress } from "../components/ui/progress"
-import { formatTime } from "../lib/utils"
+import { formatTime, formatProgress } from "../lib/utils"
 
 type CourseProgressProps = {
   totalVideos: number

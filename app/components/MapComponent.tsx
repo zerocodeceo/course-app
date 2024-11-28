@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet icon issue
 const fixLeafletIcon = () => {
-  // @ts-expect-error - Known issue with Leaflet types
+  // @ts-ignore
   delete L.Icon.Default.prototype._getIconUrl
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: '/leaflet/marker-icon-2x.png',
