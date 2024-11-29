@@ -105,7 +105,7 @@ app.get('/auth/google',
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    failureRedirect: 'https://course-app-five-kappa.vercel.app/login',
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
     session: true 
   }),
   function(req, res) {
@@ -118,7 +118,7 @@ app.get('/auth/google/callback',
     console.log('===================')
     
     res.header('X-Session-Id', req.sessionID)
-    res.redirect('https://course-app-five-kappa.vercel.app')
+    res.redirect(process.env.CLIENT_URL)
   }
 )
 
