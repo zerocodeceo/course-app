@@ -27,27 +27,57 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 
+// Add logging for debugging
+app.use((req, res, next) => {
+  console.log('Incoming request origin:', req.headers.origin)
+  next()
+})
+
 // Add default origins if environment variable is not set
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
   : [
       'http://localhost:3000',
       'https://zerocodeceo-gp63v05oe-brunobertapelis-projects.vercel.app',
-      'https://zerocodeceo.vercel.app'
+      'https://zerocodeceo.vercel.app',
+      'https://zerocodeceo-git-master-brunobertapelis-projects.vercel.app', // Preview deployment
+      /\.vercel\.app$/ // Allow all vercel.app subdomains
     ]
+
+console.log('Allowed Origins:', allowedOrigins)
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true)
+    console.log('Request origin:', origin)
     
-    if (allowedOrigins.indexOf(origin) === -1) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('No origin, allowing request')
+      return callback(null, true)
+    }
+    
+    // Check if origin matches any allowed origins (including regex patterns)
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin)
+      }
+      return origin === allowed
+    })
+    
+    console.log('Is origin allowed:', isAllowed)
+
+    if (!isAllowed) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
+      console.log('Rejecting origin:', origin)
       return callback(new Error(msg), false)
     }
+
+    console.log('Allowing origin:', origin)
     return callback(null, true)
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
 app.use(session({
@@ -62,7 +92,8 @@ app.use(session({
     secure: !isDevelopment,
     sameSite: isDevelopment ? 'lax' : 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    domain: isDevelopment ? 'localhost' : '.vercel.app'
+    // Remove domain restriction for now
+    // domain: isDevelopment ? 'localhost' : '.vercel.app'
   }
 }))
 
