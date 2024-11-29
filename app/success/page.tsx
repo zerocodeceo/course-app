@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
 import { showToast } from '../components/Toast'
+import { API_URL } from '../lib/api'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
