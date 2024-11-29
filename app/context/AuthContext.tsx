@@ -31,10 +31,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
+      console.log('Checking auth status with:', `${API_URL}/auth/status`)
       const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       })
       const data = await response.json()
+      console.log('Auth status response:', data)
       setUser(data.user)
     } catch (error) {
       console.error('Error checking auth status:', error)

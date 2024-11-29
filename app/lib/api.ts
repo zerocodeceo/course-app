@@ -1,7 +1,7 @@
 const getApiUrl = () => {
   // Check if we're in the browser
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_PROD_API_URL
+    return 'https://zerocodeceo.onrender.com'
   }
 
   // Client-side logic
@@ -13,7 +13,8 @@ const getApiUrl = () => {
   console.log('API URL Selection:', {
     hostname: window.location.hostname,
     isProduction,
-    selectedUrl: apiUrl
+    selectedUrl: apiUrl,
+    currentUrl: window.location.href
   })
 
   return apiUrl

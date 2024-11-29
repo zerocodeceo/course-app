@@ -28,6 +28,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
+app.enable('trust proxy')
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -42,7 +44,7 @@ app.use(session({
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
-    domain: '.onrender.com'
+    domain: 'onrender.com'
   }
 }))
 
@@ -101,14 +103,25 @@ app.get('/auth/google/callback',
     session: true 
   }),
   function(req, res) {
+    console.log('=== Auth Callback ===')
+    console.log('Session:', req.session)
     console.log('Auth status:', req.isAuthenticated())
     console.log('User:', req.user)
+    console.log('Cookies:', req.cookies)
+    console.log('===================')
     
     res.redirect('https://zerocodeceo.vercel.app')
   }
 )
 
 app.get('/auth/status', (req, res) => {
+  console.log('=== Auth Status Check ===')
+  console.log('Session:', req.session)
+  console.log('Auth status:', req.isAuthenticated())
+  console.log('User:', req.user)
+  console.log('Cookies:', req.cookies)
+  console.log('===================')
+  
   res.json({ user: req.user || null })
 })
 
@@ -453,8 +466,6 @@ app.get('/user-progress', async (req, res) => {
     res.status(500).json({ error: 'Error fetching progress' })
   }
 })
-
-app.enable('trust proxy')
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
