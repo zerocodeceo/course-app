@@ -1,6 +1,13 @@
 "use client"
 import { useEffect, useState } from 'react'
 
+// Declare custom event
+declare global {
+  interface WindowEventMap {
+    'show-toast': CustomEvent<{ message: string; type: string }>;
+  }
+}
+
 export function showToast(message: string, type: 'success' | 'error' = 'success') {
   const event = new CustomEvent('show-toast', { detail: { message, type } })
   window.dispatchEvent(event)

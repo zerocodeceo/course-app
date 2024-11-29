@@ -9,9 +9,41 @@ type VideoPlayerProps = {
 
 declare global {
   interface Window {
-    YT: any
-    onYouTubeIframeAPIReady: () => void
+    YT: {
+      Player: new (element: HTMLElement | string, config: PlayerConfig) => YTPlayer;
+      PlayerState: {
+        PLAYING: number;
+        ENDED: number;
+      };
+    };
+    onYouTubeIframeAPIReady: () => void;
   }
+}
+
+interface YTPlayer {
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  destroy: () => void;
+  getPlayerState: () => number;
+}
+
+interface PlayerConfig {
+  videoId: string;
+  width: string;
+  height: string;
+  playerVars: {
+    modestbranding: number;
+    rel: number;
+    start: number;
+  };
+  events: {
+    onReady: (event: PlayerEvent) => void;
+    onStateChange: (event: PlayerStateEvent) => void;
+  };
+}
+
+interface PlayerStateEvent {
+  data: number;
 }
 
 interface PlayerEvent {
@@ -22,10 +54,9 @@ interface PlayerEvent {
 }
 
 export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: VideoPlayerProps) {
-  const playerRef = useRef<any>(null)
+  const playerRef = useRef<YTPlayer | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [lastUpdateTime, setLastUpdateTime] = useState(0)
-  const [isInitialized, setIsInitialized] = useState(false)
 
   // Extract video ID from different URL formats
   const getVideoId = (url: string) => {
@@ -80,16 +111,15 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
               watched: initialProgress,
               completed: initialProgress >= duration * 0.9
             })
-            setIsInitialized(true)
           },
-          onStateChange: (event: any) => {
+          onStateChange: (event: PlayerStateEvent) => {
             // Check if video is playing
             if (event.data === window.YT.PlayerState.PLAYING) {
               startTracking()
             }
             // Check if video ended
             if (event.data === window.YT.PlayerState.ENDED) {
-              const duration = playerRef.current.getDuration()
+              const duration = playerRef.current?.getDuration() || 0
               onProgress({
                 duration,
                 watched: duration,
