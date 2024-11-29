@@ -36,14 +36,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   const handleGoogleLogin = () => {
     const loginUrl = `${API_URL}/auth/google`
-    console.log('Starting Google login with URL:', loginUrl)
+    console.log('Login URL:', loginUrl)
+    console.log('Current hostname:', window.location.hostname)
+    console.log('Is production?', window.location.hostname.includes('vercel.app'))
     
-    // Force HTTPS in production
-    if (process.env.NODE_ENV === 'production' && loginUrl.startsWith('http://')) {
-      window.location.href = loginUrl.replace('http://', 'https://')
-    } else {
-      window.location.href = loginUrl
-    }
+    window.location.href = loginUrl
   }
 
   console.log('MainLayout mounted with API_URL:', API_URL)

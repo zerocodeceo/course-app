@@ -13,7 +13,12 @@ const UserProgress = require('./models/UserProgress')
 
 const app = express()
 
-// Near the top after imports
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err))
+
+// Constants for URLs
 const PROD_FRONTEND_URL = 'https://zerocodeceo.vercel.app'
 const PROD_BACKEND_URL = 'https://zerocodeceo.onrender.com'
 const DEV_FRONTEND_URL = 'http://localhost:3000'
@@ -22,11 +27,14 @@ const DEV_BACKEND_URL = 'http://localhost:8000'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const FRONTEND_URL = isDevelopment ? DEV_FRONTEND_URL : PROD_FRONTEND_URL
 const BACKEND_URL = isDevelopment ? DEV_BACKEND_URL : PROD_BACKEND_URL
-
-// Update Google callback URL
 const GOOGLE_CALLBACK_URL = `${BACKEND_URL}/auth/google/callback`
 
-// Update CORS configuration
+// Middleware
+app.use('/webhook', express.raw({type: 'application/json'}))
+app.use(express.json())
+app.enable('trust proxy')
+
+// CORS configuration
 app.use(cors({
   origin: [DEV_FRONTEND_URL, PROD_FRONTEND_URL],
   credentials: true,
@@ -34,7 +42,27 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-// Update Google Strategy
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60
+  }),
+  cookie: {
+    secure: !isDevelopment,
+    sameSite: isDevelopment ? 'lax' : 'none',
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}))
+
+// Initialize Passport
+app.use(passport.initialize())
+app.use(passport.session())
+
+// Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -43,9 +71,7 @@ passport.use(new GoogleStrategy({
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
-      console.log('Google auth callback received')
       let user = await User.findOne({ googleId: profile.id })
-      
       if (!user) {
         user = await User.create({
           googleId: profile.id,
@@ -55,10 +81,8 @@ passport.use(new GoogleStrategy({
           plan: 'basic'
         })
       }
-      
       return cb(null, user)
     } catch (error) {
-      console.error('Error in Google Strategy:', error)
       return cb(error, null)
     }
   }
