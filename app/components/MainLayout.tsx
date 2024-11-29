@@ -4,8 +4,9 @@ import { Footer } from './Footer'
 import { Button } from "@/components/ui/button"
 import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { API_URL } from '../lib/api'
 
 // Define navigation items in a shared location (could be moved to a constants file)
 export const navItems = [
@@ -17,21 +18,30 @@ export const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const handleLogout = () => {
-    window.location.href = 'http://localhost:8000/auth/logout'
+  const handleLogout = async () => {
+    // Instead of directly redirecting, first hit the logout endpoint
+    await fetch(`${API_URL}/auth/logout`, {
+      credentials: 'include'
+    })
+    router.push('/')
+  }
+
+  const handleNavigation = (path: string) => {
+    router.push(path)
+  }
+
+  const handleLogin = () => {
+    window.location.href = `${API_URL}/auth/google`
   }
 
   const isActive = (path: string) => pathname === path
-
-  const handleNavigation = (path: string) => {
-    window.location.href = path
-  }
 
   if (!mounted) {
     return null
@@ -110,7 +120,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <Button 
-              onClick={() => window.location.href = 'http://localhost:8000/auth/google'}
+              onClick={handleLogin}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Login with Google
