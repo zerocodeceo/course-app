@@ -35,8 +35,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleGoogleLogin = () => {
+    console.log('=== Google Login Debug Info ===')
+    console.log('Window Location:', window.location.hostname)
     console.log('API_URL:', API_URL)
-    window.location.href = `${API_URL}/auth/google`
+    
+    const loginUrl = `${API_URL}/auth/google`
+    console.log('Login URL:', loginUrl)
+    
+    window.location.href = loginUrl
   }
 
   if (!mounted) {
