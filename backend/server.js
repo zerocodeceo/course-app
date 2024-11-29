@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
+  origin: ['course-app-five-kappa.vercel.app', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
@@ -105,7 +105,7 @@ app.get('/auth/google',
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    failureRedirect: 'https://zerocodeceo.vercel.app/login',
+    failureRedirect: 'course-app-five-kappa.vercel.app/login',
     session: true 
   }),
   function(req, res) {
@@ -118,7 +118,7 @@ app.get('/auth/google/callback',
     console.log('===================')
     
     res.header('X-Session-Id', req.sessionID)
-    res.redirect('https://zerocodeceo.vercel.app')
+    res.redirect('course-app-five-kappa.vercel.app')
   }
 )
 
