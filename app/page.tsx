@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { AnimatedBackground } from './components/AnimatedBackground'
 import { navItems } from './components/MainLayout'
 import { API_URL } from './lib/api'
-import MainLayout from './components/MainLayout'
+import { MainLayout } from './components/MainLayout'
 
 export default function Home() {
   const { user } = useAuth()

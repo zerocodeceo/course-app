@@ -36,10 +36,12 @@ app.use(session({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60
   }),
+  proxy: true,
   cookie: {
     secure: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
     domain: '.onrender.com'
   }
 }))
@@ -451,6 +453,8 @@ app.get('/user-progress', async (req, res) => {
     res.status(500).json({ error: 'Error fetching progress' })
   }
 })
+
+app.enable('trust proxy')
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
