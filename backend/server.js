@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const session = require('express-session')
+const MongoStore = require('connect-mongo')
 const passport = require('passport')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -26,12 +27,18 @@ app.use(cors({
 }))
 
 app.use(session({
-  secret: 'your-session-secret',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60, // Session TTL (1 day)
+    autoRemove: 'native' // Enable automatic removal of expired sessions
+  }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Required for cross-site cookie in production
   }
 }))
 
