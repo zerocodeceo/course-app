@@ -36,14 +36,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         }
       })
+      
+      console.log('Response headers:', response.headers)
       const data = await response.json()
       console.log('Auth status response:', data)
-      setUser(data.user)
+      
+      if (data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
     } catch (error) {
       console.error('Error checking auth status:', error)
+      setUser(null)
     } finally {
       setLoading(false)
     }

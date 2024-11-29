@@ -25,26 +25,29 @@ app.use(cors({
   origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }))
 
 app.enable('trust proxy')
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native'
   }),
+  name: 'sessionId',
   proxy: true,
   cookie: {
     secure: true,
+    httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
-    domain: 'onrender.com'
+    domain: '.onrender.com'
   }
 }))
 
@@ -104,10 +107,11 @@ app.get('/auth/google/callback',
   }),
   function(req, res) {
     console.log('=== Auth Callback ===')
+    console.log('Session ID:', req.sessionID)
     console.log('Session:', req.session)
     console.log('Auth status:', req.isAuthenticated())
     console.log('User:', req.user)
-    console.log('Cookies:', req.cookies)
+    console.log('Headers:', req.headers)
     console.log('===================')
     
     res.redirect('https://zerocodeceo.vercel.app')
@@ -116,13 +120,18 @@ app.get('/auth/google/callback',
 
 app.get('/auth/status', (req, res) => {
   console.log('=== Auth Status Check ===')
+  console.log('Session ID:', req.sessionID)
   console.log('Session:', req.session)
   console.log('Auth status:', req.isAuthenticated())
   console.log('User:', req.user)
-  console.log('Cookies:', req.cookies)
+  console.log('Headers:', req.headers)
   console.log('===================')
   
-  res.json({ user: req.user || null })
+  if (req.isAuthenticated()) {
+    res.json({ user: req.user })
+  } else {
+    res.json({ user: null })
+  }
 })
 
 app.get('/auth/logout', (req, res) => {
