@@ -104,17 +104,16 @@ app.use(passport.session())
 app.enable('trust proxy')
 
 // Update Google Strategy configuration
-const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://zerocodeceo.onrender.com/auth/google/callback'
-  : 'http://localhost:8000/auth/google/callback'
+const GOOGLE_CALLBACK_URL = 'https://zerocodeceo.onrender.com/auth/google/callback'
+const FRONTEND_URL = 'https://zerocodeceo.vercel.app'
 
-console.log('Current callback URL:', CALLBACK_URL)
-console.log('Current environment:', process.env.NODE_ENV)
+console.log('Google Callback URL:', GOOGLE_CALLBACK_URL)
+console.log('Frontend URL:', FRONTEND_URL)
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: CALLBACK_URL,
+    callbackURL: GOOGLE_CALLBACK_URL,
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
@@ -156,29 +155,27 @@ passport.deserializeUser(async (id, done) => {
 // Routes
 app.get('/auth/google',
   (req, res, next) => {
-    console.log('Starting Google auth...')
-    console.log('Environment:', process.env.NODE_ENV)
-    console.log('Callback URL:', CALLBACK_URL)
+    console.log('Starting Google auth from:', req.headers.origin)
+    console.log('Using callback URL:', GOOGLE_CALLBACK_URL)
     next()
   },
   passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'  // Add this to force Google account selection
+    scope: ['profile', 'email']
   })
 )
 
-app.get('/auth/google/callback', 
+app.get('/auth/google/callback',
   (req, res, next) => {
     console.log('Received callback from Google')
     next()
   },
   passport.authenticate('google', { 
-    failureRedirect: `${CLIENT_URL}/login`,
+    failureRedirect: `${FRONTEND_URL}/login`,
     failureMessage: true
   }),
-  function(req, res) {
-    console.log('Authentication successful, redirecting to:', CLIENT_URL)
-    res.redirect(CLIENT_URL)
+  (req, res) => {
+    console.log('Auth successful, redirecting to:', FRONTEND_URL)
+    res.redirect(FRONTEND_URL)
   }
 )
 
@@ -543,12 +540,22 @@ app.get('/debug-info', (req, res) => {
 app.get('/test-google-config', (req, res) => {
   res.json({
     environment: process.env.NODE_ENV,
-    callbackUrl: CALLBACK_URL,
+    callbackUrl: GOOGLE_CALLBACK_URL,
     clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',  // Only show part of it for security
     hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
     proxy: true,
     clientUrl: CLIENT_URL,
     allowedOrigins
+  })
+})
+
+app.get('/auth-config', (req, res) => {
+  res.json({
+    googleCallbackUrl: GOOGLE_CALLBACK_URL,
+    frontendUrl: FRONTEND_URL,
+    environment: process.env.NODE_ENV,
+    origin: req.headers.origin,
+    hasGoogleCredentials: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET
   })
 })
 
