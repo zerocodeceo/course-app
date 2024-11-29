@@ -46,6 +46,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
+  console.log('MainLayout mounted with API_URL:', API_URL)
+
   if (!mounted) {
     return null
   }
@@ -137,6 +139,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <Footer />
+
+      {!user && (
+        <div className="text-xs text-gray-500 mt-2">
+          Login URL: {`${API_URL}/auth/google`}
+        </div>
+      )}
     </div>
   )
 } 
