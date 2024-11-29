@@ -9,6 +9,7 @@ const User = require('./models/User')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
+const MongoStore = require('connect-mongo')
 
 const app = express()
 
@@ -21,38 +22,35 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
+  origin: 'http://localhost:3000',
   credentials: true
 }))
 
 app.use(session({
-  secret: 'your-session-secret',
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60, // Session TTL (1 day)
+    autoRemove: 'native' // Enable automatic removal of expired sessions
+  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : 'localhost'
+    domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
   }
 }))
 
 app.use(passport.initialize())
 app.use(passport.session())
 
-// Add environment-based URLs
-const CLIENT_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://zerocodeceo.vercel.app'
-  : 'http://localhost:3000'
-
-const SERVER_URL = process.env.NODE_ENV === 'production'
-  ? 'https://course-app-grij.onrender.com'
-  : 'http://localhost:8000'
-
 // Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${SERVER_URL}/auth/google/callback`
+    callbackURL: "http://localhost:8000/auth/google/callback"
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -96,7 +94,7 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect(CLIENT_URL)
+    res.redirect('http://localhost:3000')
   }
 )
 
@@ -109,7 +107,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect(CLIENT_URL)
+    res.redirect('http://localhost:3000')
   })
 })
 

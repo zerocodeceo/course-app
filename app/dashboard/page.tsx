@@ -99,7 +99,7 @@ export default function Dashboard() {
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard-stats`, {
+        const response = await fetch('http://localhost:8000/dashboard-stats', {
           credentials: 'include'
         })
         const data = await response.json()
@@ -113,7 +113,7 @@ export default function Dashboard() {
     // Fetch course content
     const fetchCourseContent = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/course-content`, {
+        const response = await fetch('http://localhost:8000/course-content', {
           credentials: 'include'
         })
         const data = await response.json()
@@ -224,7 +224,7 @@ export default function Dashboard() {
 
   const handleUpgrade = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/create-checkout-session`, {
+      const response = await fetch('http://localhost:8000/create-checkout-session', {
         method: 'POST',
         credentials: 'include',
       })
@@ -240,7 +240,7 @@ export default function Dashboard() {
 
   const handleVideoProgress = async (videoId: string, progress: { duration: number, watched: number, completed: boolean }) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/update-progress`, {
+      const response = await fetch('http://localhost:8000/update-progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
