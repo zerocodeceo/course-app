@@ -100,11 +100,17 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
+// Add this before your routes
+app.enable('trust proxy')
+
 // Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${SERVER_URL}/auth/google/callback`
+    callbackURL: isDevelopment 
+      ? "http://localhost:8000/auth/google/callback"
+      : "https://zerocodeceo.onrender.com/auth/google/callback",
+    proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
