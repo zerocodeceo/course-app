@@ -103,17 +103,23 @@ app.use(passport.session())
 // Add this before your routes
 app.enable('trust proxy')
 
-// Passport configuration
+// Update Google Strategy configuration
+const CALLBACK_URL = process.env.NODE_ENV === 'production'
+  ? 'https://zerocodeceo.onrender.com/auth/google/callback'
+  : 'http://localhost:8000/auth/google/callback'
+
+console.log('Current callback URL:', CALLBACK_URL)
+console.log('Current environment:', process.env.NODE_ENV)
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.NODE_ENV === 'production'
-      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
-      : 'http://localhost:8000/auth/google/callback',
+    callbackURL: CALLBACK_URL,
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
+      console.log('Google auth callback received')
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
@@ -128,6 +134,7 @@ passport.use(new GoogleStrategy({
       
       return cb(null, user)
     } catch (error) {
+      console.error('Error in Google Strategy:', error)
       return cb(error, null)
     }
   }
@@ -149,18 +156,28 @@ passport.deserializeUser(async (id, done) => {
 // Routes
 app.get('/auth/google',
   (req, res, next) => {
-    console.log('Auth request received, environment:', process.env.NODE_ENV)
-    console.log('Callback URL:', process.env.NODE_ENV === 'production'
-      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
-      : 'http://localhost:8000/auth/google/callback')
+    console.log('Starting Google auth...')
+    console.log('Environment:', process.env.NODE_ENV)
+    console.log('Callback URL:', CALLBACK_URL)
     next()
   },
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account'  // Add this to force Google account selection
+  })
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: `${CLIENT_URL}/login` }),
+  (req, res, next) => {
+    console.log('Received callback from Google')
+    next()
+  },
+  passport.authenticate('google', { 
+    failureRedirect: `${CLIENT_URL}/login`,
+    failureMessage: true
+  }),
   function(req, res) {
+    console.log('Authentication successful, redirecting to:', CLIENT_URL)
     res.redirect(CLIENT_URL)
   }
 )
@@ -520,6 +537,18 @@ app.get('/debug-info', (req, res) => {
     googleCallbackUrl: process.env.NODE_ENV === 'production'
       ? 'https://zerocodeceo.onrender.com/auth/google/callback'
       : 'http://localhost:8000/auth/google/callback'
+  })
+})
+
+app.get('/test-google-config', (req, res) => {
+  res.json({
+    environment: process.env.NODE_ENV,
+    callbackUrl: CALLBACK_URL,
+    clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',  // Only show part of it for security
+    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    proxy: true,
+    clientUrl: CLIENT_URL,
+    allowedOrigins
   })
 })
 

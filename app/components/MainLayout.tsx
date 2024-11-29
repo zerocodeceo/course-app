@@ -35,8 +35,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleGoogleLogin = () => {
-    console.log('Attempting login with URL:', `${API_URL}/auth/google`)
-    window.location.href = `${API_URL}/auth/google`
+    const loginUrl = `${API_URL}/auth/google`
+    console.log('Starting Google login with URL:', loginUrl)
+    
+    // Force HTTPS in production
+    if (process.env.NODE_ENV === 'production' && loginUrl.startsWith('http://')) {
+      window.location.href = loginUrl.replace('http://', 'https://')
+    } else {
+      window.location.href = loginUrl
+    }
   }
 
   if (!mounted) {
