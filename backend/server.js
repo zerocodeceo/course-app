@@ -107,9 +107,9 @@ app.enable('trust proxy')
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: isDevelopment 
-      ? "http://localhost:8000/auth/google/callback"
-      : "https://zerocodeceo.onrender.com/auth/google/callback",
+    callbackURL: process.env.NODE_ENV === 'production'
+      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
+      : 'http://localhost:8000/auth/google/callback',
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
@@ -148,6 +148,13 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
+  (req, res, next) => {
+    console.log('Auth request received, environment:', process.env.NODE_ENV)
+    console.log('Callback URL:', process.env.NODE_ENV === 'production'
+      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
+      : 'http://localhost:8000/auth/google/callback')
+    next()
+  },
   passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
@@ -502,6 +509,18 @@ app.get('/user-progress', async (req, res) => {
     console.error('Error fetching progress:', error)
     res.status(500).json({ error: 'Error fetching progress' })
   }
+})
+
+// Add this route to check environment variables
+app.get('/debug-info', (req, res) => {
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    clientUrl: process.env.PROD_CLIENT_URL,
+    serverUrl: process.env.PROD_SERVER_URL,
+    googleCallbackUrl: process.env.NODE_ENV === 'production'
+      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
+      : 'http://localhost:8000/auth/google/callback'
+  })
 })
 
 if (process.env.NODE_ENV === 'production') {

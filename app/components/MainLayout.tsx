@@ -35,14 +35,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleGoogleLogin = () => {
-    console.log('=== Google Login Debug Info ===')
-    console.log('Window Location:', window.location.hostname)
-    console.log('API_URL:', API_URL)
-    
-    const loginUrl = `${API_URL}/auth/google`
-    console.log('Login URL:', loginUrl)
-    
-    window.location.href = loginUrl
+    console.log('Attempting login with URL:', `${API_URL}/auth/google`)
+    window.location.href = `${API_URL}/auth/google`
   }
 
   if (!mounted) {
