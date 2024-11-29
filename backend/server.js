@@ -49,7 +49,8 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback"
+    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
+    proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -91,9 +92,9 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: 'https://zerocodeceo.vercel.app/login' }),
+  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login` }),
   function(req, res) {
-    res.redirect('https://zerocodeceo.vercel.app')
+    res.redirect(process.env.CLIENT_URL)
   }
 )
 
@@ -106,7 +107,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect('https://zerocodeceo.vercel.app')
+    res.redirect(process.env.CLIENT_URL)
   })
 })
 
@@ -133,7 +134,7 @@ app.post('/create-checkout-session', async (req, res) => {
       ],
       mode: 'payment',
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}`,
+      cancel_url: process.env.CLIENT_URL,
       customer_email: req.user.email,
       metadata: {
         userId: req.user._id.toString()
