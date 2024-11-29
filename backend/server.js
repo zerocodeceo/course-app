@@ -13,103 +13,28 @@ const UserProgress = require('./models/UserProgress')
 
 const app = express()
 
-// At the top of your file
+// Near the top after imports
+const PROD_FRONTEND_URL = 'https://zerocodeceo.vercel.app'
+const PROD_BACKEND_URL = 'https://zerocodeceo.onrender.com'
+const DEV_FRONTEND_URL = 'http://localhost:3000'
+const DEV_BACKEND_URL = 'http://localhost:8000'
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const CLIENT_URL = isDevelopment ? process.env.DEV_CLIENT_URL : process.env.PROD_CLIENT_URL
-const SERVER_URL = isDevelopment ? process.env.DEV_SERVER_URL : process.env.PROD_SERVER_URL
+const FRONTEND_URL = isDevelopment ? DEV_FRONTEND_URL : PROD_FRONTEND_URL
+const BACKEND_URL = isDevelopment ? DEV_BACKEND_URL : PROD_BACKEND_URL
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err))
+// Update Google callback URL
+const GOOGLE_CALLBACK_URL = `${BACKEND_URL}/auth/google/callback`
 
-// Middleware
-app.use('/webhook', express.raw({type: 'application/json'}))
-app.use(express.json())
-
-// Add logging for debugging
-app.use((req, res, next) => {
-  console.log('Incoming request origin:', req.headers.origin)
-  next()
-})
-
-// Add default origins if environment variable is not set
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : [
-      'http://localhost:3000',
-      'https://zerocodeceo-gp63v05oe-brunobertapelis-projects.vercel.app',
-      'https://zerocodeceo.vercel.app',
-      'https://zerocodeceo-git-master-brunobertapelis-projects.vercel.app', // Preview deployment
-      /\.vercel\.app$/ // Allow all vercel.app subdomains
-    ]
-
-console.log('Allowed Origins:', allowedOrigins)
-
+// Update CORS configuration
 app.use(cors({
-  origin: function(origin, callback) {
-    console.log('Request origin:', origin)
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      console.log('No origin, allowing request')
-      return callback(null, true)
-    }
-    
-    // Check if origin matches any allowed origins (including regex patterns)
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) {
-        return allowed.test(origin)
-      }
-      return origin === allowed
-    })
-    
-    console.log('Is origin allowed:', isAllowed)
-
-    if (!isAllowed) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
-      console.log('Rejecting origin:', origin)
-      return callback(new Error(msg), false)
-    }
-
-    console.log('Allowing origin:', origin)
-    return callback(null, true)
-  },
+  origin: [DEV_FRONTEND_URL, PROD_FRONTEND_URL],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
-  }),
-  cookie: {
-    secure: !isDevelopment,
-    sameSite: isDevelopment ? 'lax' : 'none',
-    maxAge: 24 * 60 * 60 * 1000,
-    // Remove domain restriction for now
-    // domain: isDevelopment ? 'localhost' : '.vercel.app'
-  }
-}))
-
-app.use(passport.initialize())
-app.use(passport.session())
-
-// Add this before your routes
-app.enable('trust proxy')
-
-// Update Google Strategy configuration
-const GOOGLE_CALLBACK_URL = 'https://zerocodeceo.onrender.com/auth/google/callback'
-const FRONTEND_URL = 'https://zerocodeceo.vercel.app'
-
-console.log('Google Callback URL:', GOOGLE_CALLBACK_URL)
-console.log('Frontend URL:', FRONTEND_URL)
-
+// Update Google Strategy
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -165,16 +90,11 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback',
-  (req, res, next) => {
-    console.log('Received callback from Google')
-    next()
-  },
   passport.authenticate('google', { 
     failureRedirect: `${FRONTEND_URL}/login`,
     failureMessage: true
   }),
   (req, res) => {
-    console.log('Auth successful, redirecting to:', FRONTEND_URL)
     res.redirect(FRONTEND_URL)
   }
 )
@@ -188,7 +108,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect(CLIENT_URL)
+    res.redirect(FRONTEND_URL)
   })
 })
 
@@ -214,8 +134,8 @@ app.post('/create-checkout-session', async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: `${CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${CLIENT_URL}`,
+      success_url: `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: FRONTEND_URL,
       customer_email: req.user.email,
       metadata: {
         userId: req.user._id.toString()
