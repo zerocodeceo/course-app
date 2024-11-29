@@ -13,6 +13,11 @@ const UserProgress = require('./models/UserProgress')
 
 const app = express()
 
+// At the top of your file
+const isDevelopment = process.env.NODE_ENV !== 'production'
+const CLIENT_URL = isDevelopment ? process.env.DEV_CLIENT_URL : process.env.PROD_CLIENT_URL
+const SERVER_URL = isDevelopment ? process.env.DEV_SERVER_URL : process.env.PROD_SERVER_URL
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
@@ -22,23 +27,23 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: CLIENT_URL,
   credentials: true
 }))
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60, // Session TTL (1 day)
-    autoRemove: 'native' // Enable automatic removal of expired sessions
+    ttl: 24 * 60 * 60
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Required for cross-site cookie in production
+    secure: !isDevelopment,
+    sameSite: isDevelopment ? 'lax' : 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: isDevelopment ? 'localhost' : '.vercel.app'
   }
 }))
 
@@ -49,7 +54,7 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:8000/auth/google/callback"
+    callbackURL: `${SERVER_URL}/auth/google/callback`
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -91,9 +96,9 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: `${CLIENT_URL}/login` }),
   function(req, res) {
-    res.redirect('http://localhost:3000')
+    res.redirect(CLIENT_URL)
   }
 )
 
@@ -106,7 +111,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect('http://localhost:3000')
+    res.redirect(CLIENT_URL)
   })
 })
 
@@ -442,6 +447,20 @@ app.get('/user-progress', async (req, res) => {
     res.status(500).json({ error: 'Error fetching progress' })
   }
 })
+
+if (process.env.NODE_ENV === 'production') {
+  // Production error handler
+  app.use((err, req, res, next) => {
+    console.error(err.stack)
+    res.status(500).json({ error: 'Something went wrong!' })
+  })
+} else {
+  // Development error handler
+  app.use((err, req, res, next) => {
+    console.error(err.stack)
+    res.status(500).json({ error: err.message, stack: err.stack })
+  })
+}
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
