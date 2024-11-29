@@ -27,7 +27,14 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',')
+// Add default origins if environment variable is not set
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : [
+      'http://localhost:3000',
+      'https://zerocodeceo-gp63v05oe-brunobertapelis-projects.vercel.app',
+      'https://zerocodeceo.vercel.app'
+    ]
 
 app.use(cors({
   origin: function(origin, callback) {
