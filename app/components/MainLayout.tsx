@@ -2,6 +2,7 @@
 import * as React from 'react'
 import { Footer } from './Footer'
 import { useEffect, useState } from 'react'
+import { Header } from './Header'
 
 export const navItems = [
   { path: '/', label: 'Home' },
@@ -27,6 +28,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Header />
       {children}
       <Footer />
     </div>
