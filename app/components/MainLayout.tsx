@@ -34,6 +34,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     window.location.href = path
   }
 
+  const handleGoogleLogin = () => {
+    console.log('API_URL:', API_URL)
+    window.location.href = `${API_URL}/auth/google`
+  }
+
   if (!mounted) {
     return null
   }
@@ -111,7 +116,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <Button 
-              onClick={() => window.location.href = `${API_URL}/auth/google`}
+              onClick={handleGoogleLogin}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Login with Google
