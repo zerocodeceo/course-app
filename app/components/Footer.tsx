@@ -63,7 +63,7 @@ export function Footer() {
           </div>
 
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} ZeroCodeCEO. All rights reserved.
+            © {new Date().getFullYear()} zerocodeceo.com. All rights reserved.
           </p>
         </div>
       </div>

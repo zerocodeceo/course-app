@@ -413,7 +413,7 @@ export default function Dashboard() {
                     ))
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      No course content available
+                      No course content available.
                     </div>
                   )}
                 </Accordion>

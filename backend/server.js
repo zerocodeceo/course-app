@@ -340,7 +340,7 @@ app.get('/course-content', async (req, res) => {
         {
           id: '6',
           title: '6. Building the Dashboard with the Course Videos and Statistics',
-          description: 'Learn how to create a dynamic course dashboard that organizes your videos and displays key user statistics. This video walks you through designing and coding the interface, making it easy for users to access content and track their progress.',
+          description: 'Learn how to create a dynamic course dashboard that organizes your videos and displays key user statistics! This video walks you through designing and coding the interface, making it easy for users to access content and track their progress.',
           videoUrl: 'https://www.youtube.com/embed/yuR5oJxgvpI',
           order: 6
         },
