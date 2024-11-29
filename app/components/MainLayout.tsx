@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { API_URL } from '../lib/api'
 
 // Define navigation items in a shared location (could be moved to a constants file)
 export const navItems = [
@@ -25,7 +24,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleLogout = () => {
-    window.location.href = `${API_URL}/auth/logout`
+    window.location.href = 'http://localhost:8000/auth/logout'
   }
 
   const isActive = (path: string) => pathname === path
@@ -33,21 +32,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const handleNavigation = (path: string) => {
     window.location.href = path
   }
-
-  const handleGoogleLogin = () => {
-    if (typeof window !== 'undefined') {
-      const loginUrl = `${API_URL}/auth/google`
-      console.log('Login URL:', loginUrl)
-      console.log('Current hostname:', window.location.hostname)
-      console.log('Is production?', window.location.hostname.includes('vercel.app'))
-      
-      window.location.href = loginUrl
-    }
-  }
-
-  useEffect(() => {
-    console.log('MainLayout mounted with API_URL:', API_URL)
-  }, [])
 
   if (!mounted) {
     return null
@@ -126,7 +110,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <Button 
-              onClick={handleGoogleLogin}
+              onClick={() => window.location.href = 'http://localhost:8000/auth/google'}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Login with Google
@@ -140,12 +124,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <Footer />
-
-      {!user && (
-        <div className="text-xs text-gray-500 mt-2">
-          Login URL: {`${API_URL}/auth/google`}
-        </div>
-      )}
     </div>
   )
 } 

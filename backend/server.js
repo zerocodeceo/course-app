@@ -18,47 +18,30 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err))
 
-// Constants for URLs
-const PROD_FRONTEND_URL = 'https://zerocodeceo.vercel.app'
-const PROD_BACKEND_URL = 'https://zerocodeceo.onrender.com'
-const DEV_FRONTEND_URL = 'http://localhost:3000'
-const DEV_BACKEND_URL = 'http://localhost:8000'
-
-const isDevelopment = process.env.NODE_ENV !== 'production'
-const FRONTEND_URL = isDevelopment ? DEV_FRONTEND_URL : PROD_FRONTEND_URL
-const BACKEND_URL = isDevelopment ? DEV_BACKEND_URL : PROD_BACKEND_URL
-const GOOGLE_CALLBACK_URL = `${BACKEND_URL}/auth/google/callback`
-
 // Middleware
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
-app.enable('trust proxy')
-
-// CORS configuration
 app.use(cors({
-  origin: [DEV_FRONTEND_URL, PROD_FRONTEND_URL],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  origin: 'http://localhost:3000',
+  credentials: true
 }))
 
-// Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60, // Session TTL (1 day)
+    autoRemove: 'native' // Enable automatic removal of expired sessions
   }),
   cookie: {
-    secure: !isDevelopment,
-    sameSite: isDevelopment ? 'lax' : 'none',
-    maxAge: 24 * 60 * 60 * 1000
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Required for cross-site cookie in production
   }
 }))
 
-// Initialize Passport
 app.use(passport.initialize())
 app.use(passport.session())
 
@@ -66,12 +49,12 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: GOOGLE_CALLBACK_URL,
-    proxy: true
+    callbackURL: "http://localhost:8000/auth/google/callback"
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
       let user = await User.findOne({ googleId: profile.id })
+      
       if (!user) {
         user = await User.create({
           googleId: profile.id,
@@ -81,6 +64,7 @@ passport.use(new GoogleStrategy({
           plan: 'basic'
         })
       }
+      
       return cb(null, user)
     } catch (error) {
       return cb(error, null)
@@ -103,23 +87,13 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  (req, res, next) => {
-    console.log('Starting Google auth from:', req.headers.origin)
-    console.log('Using callback URL:', GOOGLE_CALLBACK_URL)
-    next()
-  },
-  passport.authenticate('google', { 
-    scope: ['profile', 'email']
-  })
+  passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
-app.get('/auth/google/callback',
-  passport.authenticate('google', { 
-    failureRedirect: `${FRONTEND_URL}/login`,
-    failureMessage: true
-  }),
-  (req, res) => {
-    res.redirect(FRONTEND_URL)
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('http://localhost:3000')
   }
 )
 
@@ -132,7 +106,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect(FRONTEND_URL)
+    res.redirect('http://localhost:3000')
   })
 })
 
@@ -158,8 +132,8 @@ app.post('/create-checkout-session', async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: FRONTEND_URL,
+      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}`,
       customer_email: req.user.email,
       metadata: {
         userId: req.user._id.toString()
@@ -468,54 +442,6 @@ app.get('/user-progress', async (req, res) => {
     res.status(500).json({ error: 'Error fetching progress' })
   }
 })
-
-// Add this route to check environment variables
-app.get('/debug-info', (req, res) => {
-  res.json({
-    nodeEnv: process.env.NODE_ENV,
-    clientUrl: process.env.PROD_CLIENT_URL,
-    serverUrl: process.env.PROD_SERVER_URL,
-    googleCallbackUrl: process.env.NODE_ENV === 'production'
-      ? 'https://zerocodeceo.onrender.com/auth/google/callback'
-      : 'http://localhost:8000/auth/google/callback'
-  })
-})
-
-app.get('/test-google-config', (req, res) => {
-  res.json({
-    environment: process.env.NODE_ENV,
-    callbackUrl: GOOGLE_CALLBACK_URL,
-    clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',  // Only show part of it for security
-    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-    proxy: true,
-    clientUrl: CLIENT_URL,
-    allowedOrigins
-  })
-})
-
-app.get('/auth-config', (req, res) => {
-  res.json({
-    googleCallbackUrl: GOOGLE_CALLBACK_URL,
-    frontendUrl: FRONTEND_URL,
-    environment: process.env.NODE_ENV,
-    origin: req.headers.origin,
-    hasGoogleCredentials: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET
-  })
-})
-
-if (process.env.NODE_ENV === 'production') {
-  // Production error handler
-  app.use((err, req, res, next) => {
-    console.error(err.stack)
-    res.status(500).json({ error: 'Something went wrong!' })
-  })
-} else {
-  // Development error handler
-  app.use((err, req, res, next) => {
-    console.error(err.stack)
-    res.status(500).json({ error: err.message, stack: err.stack })
-  })
-}
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {

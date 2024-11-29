@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
 import { showToast } from '../components/Toast'
-import { API_URL } from '../lib/api'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
@@ -24,7 +23,7 @@ function SuccessContent() {
           return
         }
 
-        const response = await fetch(`${API_URL}/verify-payment`, {
+        const response = await fetch('http://localhost:8000/verify-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

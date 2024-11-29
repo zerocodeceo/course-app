@@ -17,7 +17,6 @@ import { CourseProgress } from '../components/CourseProgress'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
-import { API_URL } from '../lib/api'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -77,6 +76,7 @@ export default function Dashboard() {
   })
   const [courseContent, setCourseContent] = useState<CourseContent[]>([])
   const isAdmin = user?.email === "bbertapeli@gmail.com"
+  const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState({
     completedVideos: 0,
     totalDuration: 0,
@@ -88,16 +88,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true)
-    
+  }, [])
+
+  useEffect(() => {
     if (!user) {
-      window.location.href = '/'
+      router.push('/')
       return
     }
 
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(`${API_URL}/dashboard-stats`, {
+        const response = await fetch('http://localhost:8000/dashboard-stats', {
           credentials: 'include'
         })
         const data = await response.json()
@@ -111,22 +113,24 @@ export default function Dashboard() {
     // Fetch course content
     const fetchCourseContent = async () => {
       try {
-        const response = await fetch(`${API_URL}/course-content`, {
+        const response = await fetch('http://localhost:8000/course-content', {
           credentials: 'include'
         })
         const data = await response.json()
         setCourseContent(data)
       } catch (error) {
         console.error('Error fetching course content:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchCourseContent()
-  }, [user])
+  }, [user, router])
 
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const response = await fetch(`${API_URL}/user-progress`, {
+        const response = await fetch('http://localhost:8000/user-progress', {
           credentials: 'include'
         })
         const data = await response.json()
@@ -148,7 +152,7 @@ export default function Dashboard() {
     }
   }, [user])
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <MainLayout>
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -197,7 +201,7 @@ export default function Dashboard() {
   const handleSaveContent = async (id: string) => {
     try {
       const content = courseContent.find(c => c.id === id)
-      const response = await fetch(`${API_URL}/update-content/${id}`, {
+      const response = await fetch(`http://localhost:8000/update-content/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +224,7 @@ export default function Dashboard() {
 
   const handleUpgrade = async () => {
     try {
-      const response = await fetch(`${API_URL}/create-checkout-session`, {
+      const response = await fetch('http://localhost:8000/create-checkout-session', {
         method: 'POST',
         credentials: 'include',
       })
