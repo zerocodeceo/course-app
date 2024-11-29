@@ -29,8 +29,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      {children}
-      <Footer />
+      <div className="flex-grow py-8">
+        {children}
+      </div>
+      <div className="mt-auto py-8">
+        <Footer />
+      </div>
     </div>
   )
 } 
