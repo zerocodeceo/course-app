@@ -12,6 +12,7 @@ const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 
 const app = express()
+app.set('trust proxy', 1)
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -28,8 +29,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }))
 
-app.enable('trust proxy')
-
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: true,
@@ -40,16 +39,20 @@ app.use(session({
     autoRemove: 'native'
   }),
   name: 'sessionId',
-  proxy: true,
   cookie: {
     secure: true,
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
-    domain: '.onrender.com'
+    domain: 'zerocodeceo.onrender.com'
   }
 }))
+
+app.use((req, res, next) => {
+  console.log('Incoming request cookies:', req.headers.cookie)
+  next()
+})
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -114,6 +117,7 @@ app.get('/auth/google/callback',
     console.log('Headers:', req.headers)
     console.log('===================')
     
+    res.header('X-Session-Id', req.sessionID)
     res.redirect('https://zerocodeceo.vercel.app')
   }
 )
@@ -125,13 +129,13 @@ app.get('/auth/status', (req, res) => {
   console.log('Auth status:', req.isAuthenticated())
   console.log('User:', req.user)
   console.log('Headers:', req.headers)
+  console.log('Cookies:', req.headers.cookie)
   console.log('===================')
   
-  if (req.isAuthenticated()) {
-    res.json({ user: req.user })
-  } else {
-    res.json({ user: null })
-  }
+  res.json({
+    user: req.isAuthenticated() ? req.user : null,
+    sessionId: req.sessionID
+  })
 })
 
 app.get('/auth/logout', (req, res) => {

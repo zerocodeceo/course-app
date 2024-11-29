@@ -41,11 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       console.log('Response headers:', response.headers)
+      console.log('Document cookies:', document.cookie)
       const data = await response.json()
       console.log('Auth status response:', data)
       
       if (data.user) {
         setUser(data.user)
+        console.log('Session ID:', data.sessionId)
       } else {
         setUser(null)
       }
