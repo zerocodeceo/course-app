@@ -1,7 +1,9 @@
 const getApiUrl = () => {
   // Check if we're running on the actual production domain
-  const isProduction = typeof window !== 'undefined' && 
-    window.location.hostname === 'zerocodeceo.vercel.app'
+  const isProduction = typeof window !== 'undefined' && (
+    window.location.hostname.includes('vercel.app') || // Matches any Vercel deployment
+    window.location.hostname === 'zerocodeceo.com' // Your custom domain when you have one
+  )
 
   const apiUrl = isProduction 
     ? process.env.NEXT_PUBLIC_PROD_API_URL 
