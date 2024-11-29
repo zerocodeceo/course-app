@@ -23,7 +23,9 @@ app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
   origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
 app.use(session({
@@ -92,9 +94,15 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login` }),
+  passport.authenticate('google', { 
+    failureRedirect: 'https://zerocodeceo.vercel.app/login',
+    session: true 
+  }),
   function(req, res) {
-    res.redirect(process.env.CLIENT_URL)
+    console.log('Auth status:', req.isAuthenticated())
+    console.log('User:', req.user)
+    
+    res.redirect('https://zerocodeceo.vercel.app')
   }
 )
 
