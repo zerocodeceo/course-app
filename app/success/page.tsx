@@ -23,7 +23,7 @@ function SuccessContent() {
           return
         }
 
-        const response = await fetch('http://localhost:8000/verify-payment', {
+        const response = await fetch(`${API_URL}/verify-payment`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

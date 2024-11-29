@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { API_URL } from '../lib/api'
 
 // Define navigation items in a shared location (could be moved to a constants file)
 export const navItems = [
@@ -24,7 +25,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleLogout = () => {
-    window.location.href = 'http://localhost:8000/auth/logout'
+    window.location.href = `${API_URL}/auth/logout`
   }
 
   const isActive = (path: string) => pathname === path
@@ -110,7 +111,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <Button 
-              onClick={() => window.location.href = 'http://localhost:8000/auth/google'}
+              onClick={() => window.location.href = `${API_URL}/auth/google`}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Login with Google
