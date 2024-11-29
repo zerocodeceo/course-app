@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users, DollarSign, Eye, TrendingUp, PlayCircle, Globe2, Layers, Lock } from "lucide-react"
-import { ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { MainLayout } from '../components/MainLayout'
+import SimpleWorldMap from '../components/SimpleWorldMap'
 import dynamic from 'next/dynamic'
 import { showToast } from '../components/Toast'
 import { AnimatedNumber } from '../components/AnimatedNumber'
@@ -60,6 +61,13 @@ type CourseContent = {
   title: string
   description: string
   videoUrl: string
+}
+
+// Add this helper function at the top of the file
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short'
+  }).format(date)
 }
 
 export default function Dashboard() {

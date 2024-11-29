@@ -1,11 +1,11 @@
 "use client"
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
 import { useAuth } from '../context/AuthContext'
 
-function SuccessContent() {
+export default function SuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user, refreshUser } = useAuth()
@@ -40,7 +40,7 @@ function SuccessContent() {
         setTimeout(() => {
           router.push('/')
         }, 2000)
-      } catch {
+      } catch (_err) {
         setError('Failed to verify payment')
       } finally {
         setLoading(false)
@@ -99,20 +99,5 @@ function SuccessContent() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function SuccessPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    }>
-      <SuccessContent />
-    </Suspense>
   )
 } 

@@ -9,7 +9,6 @@ const User = require('./models/User')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
-const MongoStore = require('connect-mongo')
 
 const app = express()
 
@@ -27,19 +26,12 @@ app.use(cors({
 }))
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  secret: 'your-session-secret',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60, // Session TTL (1 day)
-    autoRemove: 'native' // Enable automatic removal of expired sessions
-  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
+    maxAge: 24 * 60 * 60 * 1000
   }
 }))
 
