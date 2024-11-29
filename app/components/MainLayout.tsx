@@ -16,7 +16,7 @@ export const navItems = [
 ]
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -26,18 +26,40 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleLogout = async () => {
-    // Instead of directly redirecting, first hit the logout endpoint
-    await fetch(`${API_URL}/auth/logout`, {
-      credentials: 'include'
-    })
-    router.push('/')
+    try {
+      // First, hit the logout endpoint
+      const response = await fetch(`${API_URL}/auth/logout`, {
+        credentials: 'include',
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Logout failed')
+      }
+
+      // Clear local auth state
+      await refreshUser()
+      
+      // Use replace instead of push to update URL properly
+      router.replace('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Fallback: force redirect to home
+      window.location.href = '/'
+    }
   }
 
   const handleNavigation = (path: string) => {
-    router.push(path)
+    // Use replace instead of push for navigation
+    router.replace(path)
   }
 
   const handleLogin = () => {
+    // For OAuth redirects, we still need to use window.location
     window.location.href = `${API_URL}/auth/google`
   }
 

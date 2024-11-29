@@ -10,14 +10,22 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  email: String,
-  profilePicture: String,
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  profilePicture: {
+    type: String
+  },
   plan: {
     type: String,
     enum: ['basic', 'premium'],
     default: 'basic'
   },
-  purchaseDate: Date,
+  purchaseDate: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now

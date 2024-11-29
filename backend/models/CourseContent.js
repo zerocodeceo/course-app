@@ -1,14 +1,31 @@
 const mongoose = require('mongoose')
 
 const courseContentSchema = new mongoose.Schema({
-  id: String,
-  title: String,
-  description: String,
-  videoUrl: String,
-  order: Number,
-  duration: Number,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  id: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  videoUrl: {
+    type: String,
+    required: true
+  },
+  order: {
+    type: Number,
+    required: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
 })
 
-module.exports = mongoose.models.CourseContent || mongoose.model('CourseContent', courseContentSchema) 
+module.exports = mongoose.model('CourseContent', courseContentSchema) 

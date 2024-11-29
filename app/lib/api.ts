@@ -11,6 +11,12 @@ const getApiUrl = () => {
     ? process.env.NEXT_PUBLIC_PROD_API_URL 
     : process.env.NEXT_PUBLIC_API_URL
 
+  console.log('API URL Selection:', {
+    hostname: window.location.hostname,
+    isProduction,
+    selectedUrl: apiUrl
+  })
+
   return apiUrl
 }
 
