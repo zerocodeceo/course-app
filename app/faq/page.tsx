@@ -7,7 +7,7 @@ import { AnimatedBackground } from '../components/AnimatedBackground'
 
 const faqs = [
   {
-    question: "What makes this course unique?",
+    question: "What makes this course unique?!",
     answer: "This course is not just about building a web app—it is the web app. Every feature you use, from watching videos to tracking progress and managing payments, is part of what you’ll learn to create. The best part? You won’t need to type a single line of code. Everything is done by AI, making it perfect for total beginners."
   },
   {
