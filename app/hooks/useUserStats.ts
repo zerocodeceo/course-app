@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react'
+import { API_URL } from '../lib/api'
 
 type UserStats = {
   totalPremiumUsers: number
@@ -19,7 +20,7 @@ export function useUserStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:8000/user-stats', {
+        const response = await fetch(`${API_URL}/user-stats`, {
           credentials: 'include'
         })
         const data = await response.json()

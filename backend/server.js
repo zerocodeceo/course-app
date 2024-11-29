@@ -22,23 +22,23 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['https://zerocodeceo.vercel.app', 'http://localhost:3000'],
   credentials: true
 }))
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60, // Session TTL (1 day)
-    autoRemove: 'native' // Enable automatic removal of expired sessions
+    ttl: 24 * 60 * 60
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Required for cross-site cookie in production
+    secure: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: '.onrender.com'
   }
 }))
 
@@ -49,7 +49,7 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:8000/auth/google/callback"
+    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback"
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -91,9 +91,9 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: 'https://zerocodeceo.vercel.app/login' }),
   function(req, res) {
-    res.redirect('http://localhost:3000')
+    res.redirect('https://zerocodeceo.vercel.app')
   }
 )
 
@@ -106,7 +106,7 @@ app.get('/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' })
     }
-    res.redirect('http://localhost:3000')
+    res.redirect('https://zerocodeceo.vercel.app')
   })
 })
 

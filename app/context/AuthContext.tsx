@@ -1,5 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react'
+import { API_URL } from '../lib/api'
 
 type User = {
   _id: string
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auth/status', {
+      const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include'
       })
       const data = await response.json()
