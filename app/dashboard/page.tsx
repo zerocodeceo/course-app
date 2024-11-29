@@ -17,6 +17,7 @@ import { CourseProgress } from '../components/CourseProgress'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
+import { API_URL } from '../lib/api'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -99,7 +100,7 @@ export default function Dashboard() {
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/dashboard-stats', {
+        const response = await fetch(`${API_URL}/dashboard-stats`, {
           credentials: 'include'
         })
         const data = await response.json()
@@ -113,7 +114,7 @@ export default function Dashboard() {
     // Fetch course content
     const fetchCourseContent = async () => {
       try {
-        const response = await fetch('http://localhost:8000/course-content', {
+        const response = await fetch(`${API_URL}/course-content`, {
           credentials: 'include'
         })
         const data = await response.json()
@@ -130,7 +131,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const response = await fetch('http://localhost:8000/user-progress', {
+        const response = await fetch(`${API_URL}/user-progress`, {
           credentials: 'include'
         })
         const data = await response.json()
@@ -201,7 +202,7 @@ export default function Dashboard() {
   const handleSaveContent = async (id: string) => {
     try {
       const content = courseContent.find(c => c.id === id)
-      const response = await fetch(`http://localhost:8000/update-content/${id}`, {
+      const response = await fetch(`${API_URL}/update-content/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +225,7 @@ export default function Dashboard() {
 
   const handleUpgrade = async () => {
     try {
-      const response = await fetch('http://localhost:8000/create-checkout-session', {
+      const response = await fetch(`${API_URL}/create-checkout-session`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -240,7 +241,7 @@ export default function Dashboard() {
 
   const handleVideoProgress = async (videoId: string, progress: { duration: number, watched: number, completed: boolean }) => {
     try {
-      const response = await fetch('http://localhost:8000/update-progress', {
+      const response = await fetch(`${API_URL}/update-progress`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
