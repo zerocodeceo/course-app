@@ -35,15 +35,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleGoogleLogin = () => {
-    const loginUrl = `${API_URL}/auth/google`
-    console.log('Login URL:', loginUrl)
-    console.log('Current hostname:', window.location.hostname)
-    console.log('Is production?', window.location.hostname.includes('vercel.app'))
-    
-    window.location.href = loginUrl
+    if (typeof window !== 'undefined') {
+      const loginUrl = `${API_URL}/auth/google`
+      console.log('Login URL:', loginUrl)
+      console.log('Current hostname:', window.location.hostname)
+      console.log('Is production?', window.location.hostname.includes('vercel.app'))
+      
+      window.location.href = loginUrl
+    }
   }
 
-  console.log('MainLayout mounted with API_URL:', API_URL)
+  useEffect(() => {
+    console.log('MainLayout mounted with API_URL:', API_URL)
+  }, [])
 
   if (!mounted) {
     return null

@@ -89,11 +89,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
-
-  useEffect(() => {
+    
     if (!user) {
-      router.push('/')
+      window.location.href = '/'
       return
     }
 
@@ -126,7 +124,7 @@ export default function Dashboard() {
       }
     }
     fetchCourseContent()
-  }, [user, router])
+  }, [user])
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -153,7 +151,7 @@ export default function Dashboard() {
     }
   }, [user])
 
-  if (!mounted || loading) {
+  if (!mounted) {
     return (
       <MainLayout>
         <div className="bg-white rounded-lg shadow-sm p-6">
