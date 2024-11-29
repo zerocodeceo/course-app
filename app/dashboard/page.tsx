@@ -77,7 +77,6 @@ export default function Dashboard() {
   })
   const [courseContent, setCourseContent] = useState<CourseContent[]>([])
   const isAdmin = user?.email === "bbertapeli@gmail.com"
-  const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState({
     completedVideos: 0,
     totalDuration: 0,
@@ -119,8 +118,6 @@ export default function Dashboard() {
         setCourseContent(data)
       } catch (error) {
         console.error('Error fetching course content:', error)
-      } finally {
-        setLoading(false)
       }
     }
     fetchCourseContent()

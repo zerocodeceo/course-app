@@ -146,26 +146,33 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
     }
   }, [videoId, initialProgress])
 
-  const startTracking = () => {
-    const interval = setInterval(() => {
-      if (playerRef.current && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
-        const currentTime = playerRef.current.getCurrentTime()
-        const duration = playerRef.current.getDuration()
-        const watchedTime = currentTime - lastUpdateTime
+  // Move startTracking inside useEffect to avoid dependency issues
+  useEffect(() => {
+    if (playerRef.current) {
+      const startTracking = () => {
+        const interval = setInterval(() => {
+          if (playerRef.current && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
+            const currentTime = playerRef.current.getCurrentTime()
+            const duration = playerRef.current.getDuration()
+            const watchedTime = currentTime - lastUpdateTime
 
-        if (watchedTime > 0) {
-          onProgress({
-            duration,
-            watched: currentTime,
-            completed: currentTime >= duration * 0.9
-          })
-          setLastUpdateTime(currentTime)
-        }
+            if (watchedTime > 0) {
+              onProgress({
+                duration,
+                watched: currentTime,
+                completed: currentTime >= duration * 0.9
+              })
+              setLastUpdateTime(currentTime)
+            }
+          }
+        }, 5000)
+
+        return () => clearInterval(interval)
       }
-    }, 5000)
 
-    return () => clearInterval(interval)
-  }
+      startTracking()
+    }
+  }, [playerRef.current, lastUpdateTime, onProgress])
 
   if (!videoId) {
     return <div className="aspect-video w-full bg-gray-100 flex items-center justify-center text-gray-500">
