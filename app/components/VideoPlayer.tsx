@@ -14,6 +14,13 @@ declare global {
   }
 }
 
+interface PlayerEvent {
+  target: {
+    getCurrentTime: () => number;
+    getDuration: () => number;
+  };
+}
+
 export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: VideoPlayerProps) {
   const playerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -66,7 +73,7 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
           start: Math.floor(initialProgress)
         },
         events: {
-          onReady: (event: any) => {
+          onReady: (event: PlayerEvent) => {
             const duration = event.target.getDuration()
             onProgress({
               duration,

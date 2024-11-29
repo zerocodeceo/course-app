@@ -63,13 +63,6 @@ type CourseContent = {
   videoUrl: string
 }
 
-// Add this helper function at the top of the file
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short'
-  }).format(date)
-}
-
 export default function Dashboard() {
   const { user } = useAuth()
   const router = useRouter()
