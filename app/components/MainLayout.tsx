@@ -18,7 +18,6 @@ export const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const pathname = usePathname()
-  const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
