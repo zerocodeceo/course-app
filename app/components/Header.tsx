@@ -43,10 +43,10 @@ export function Header() {
   }
 
   return (
-    <nav className="flex justify-between items-center py-4 px-8 md:px-16 bg-white shadow-sm">
+    <nav className="flex flex-wrap justify-between items-center py-4 px-4 md:px-16 bg-white shadow-sm">
       <div 
         onClick={() => handleNavigation('/')} 
-        className="flex items-center cursor-pointer"
+        className="flex items-center cursor-pointer order-1"
       >
         <Image
           src="/logo.png"
@@ -74,13 +74,13 @@ export function Header() {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2 md:gap-4 order-2">
         {user ? (
           <>
             <Button
               onClick={() => handleNavigation('/dashboard')}
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white text-xs"
+              className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap"
             >
               Access Dashboard
             </Button>
@@ -91,12 +91,12 @@ export function Header() {
                   alt={user.displayName}
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className="rounded-full hidden md:block"
                 />
               )}
-              <div className="flex flex-col">
-                <span>{user.displayName}</span>
-                <span className="text-xs text-gray-500">
+              <div className="hidden md:flex flex-col">
+                <span className="whitespace-nowrap">{user.displayName}</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap">
                   {user.plan === 'basic' ? 'Basic Plan' : 'Premium Plan'}
                 </span>
               </div>
@@ -104,7 +104,7 @@ export function Header() {
             <Button 
               onClick={handleLogout}
               variant="ghost"
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 text-xs md:text-sm"
             >
               Logout
             </Button>
