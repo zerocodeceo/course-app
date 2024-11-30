@@ -121,9 +121,9 @@ app.get('/auth/google/callback',
     session: true 
   }),
   function(req, res) {
-    req.session.regenerate((err) => {
+    req.login(req.user, (err) => {
       if (err) {
-        console.error('Session regenerate error:', err)
+        console.error('Login error:', err)
         return res.redirect(`${process.env.CLIENT_URL}/login`)
       }
 
@@ -132,6 +132,13 @@ app.get('/auth/google/callback',
           console.error('Session save error:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
+
+        console.log('\n=== Auth Callback ===')
+        console.log('Session ID:', req.sessionID)
+        console.log('Session:', req.session)
+        console.log('Auth status:', req.isAuthenticated())
+        console.log('User:', req.user)
+        console.log('=====================\n')
 
         res.redirect(process.env.CLIENT_URL)
       })
