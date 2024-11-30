@@ -51,14 +51,14 @@ export function Header() {
     <nav className="flex flex-wrap justify-between items-center py-4 px-4 md:px-16 bg-white shadow-sm">
       <div 
         onClick={() => handleNavigation('/')} 
-        className="flex items-center cursor-pointer order-1"
+        className="flex items-center cursor-pointer w-[120px] md:w-auto"
       >
         <Image
           src="/logo.png"
           alt="ZeroCodeCEO"
           width={200}
           height={48}
-          className="w-[150px] md:w-[200px] h-auto"
+          className="w-full h-auto"
           priority
         />
       </div>
@@ -79,27 +79,27 @@ export function Header() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 md:gap-4 order-2">
+      <div className="flex items-center gap-2 md:gap-4">
         {user ? (
-          <>
+          <div className="flex items-center gap-2">
             <Button
               onClick={() => handleNavigation('/dashboard')}
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap"
+              className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap px-2 md:px-4"
             >
-              Access Dashboard
+              Dashboard
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               {user.profilePicture && (
                 <Image
                   src={user.profilePicture}
                   alt={user.displayName}
                   width={32}
                   height={32}
-                  className="rounded-full hidden md:block"
+                  className="rounded-full"
                 />
               )}
-              <div className="hidden md:flex flex-col">
+              <div className="flex flex-col">
                 <span className="whitespace-nowrap">{user.displayName}</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">
                   {user.plan === 'basic' ? 'Basic Plan' : 'Premium Plan'}
@@ -109,17 +109,17 @@ export function Header() {
             <Button 
               onClick={handleLogout}
               variant="ghost"
-              className="text-gray-600 hover:text-gray-900 text-xs md:text-sm"
+              className="text-gray-600 hover:text-gray-900 text-xs px-2 md:px-4"
             >
               Logout
             </Button>
-          </>
+          </div>
         ) : (
           <Button 
             onClick={handleLogin}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
           >
-            Login with Google
+            Login
           </Button>
         )}
       </div>
