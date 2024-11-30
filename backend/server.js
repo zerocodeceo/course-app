@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: ['https://course-app-five-kappa.vercel.app', 'http://localhost:3000'],
+  origin: ['https://zerocodeceo.com', 'https://course-app-five-kappa.vercel.app', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
@@ -44,8 +44,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/',
-    domain: 'zerocodeceo.onrender.com'
+    path: '/'
   }
 }))
 
