@@ -26,7 +26,8 @@ app.use(cors({
   origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }))
 
 app.use((req, res, next) => {
@@ -116,28 +117,24 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  (req, res, next) => {
-    console.log('Callback received:')
-    console.log('Headers:', req.headers)
-    console.log('Query:', req.query)
-    next()
-  },
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
     session: true 
   }),
   function(req, res) {
-    console.log('\n=== Google Callback ===')
-    console.log('User:', req.user)
-    console.log('Session:', req.session)
-    console.log('Cookies to be set:', res.getHeader('Set-Cookie'))
-    console.log('User Agent:', req.headers['user-agent'])
-    console.log('=====================\n')
-
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err)
+        return res.redirect(`${process.env.CLIENT_URL}/login`)
       }
+
+      console.log('\n=== Auth Callback ===')
+      console.log('Session ID:', req.sessionID)
+      console.log('Session:', req.session)
+      console.log('Auth status:', req.isAuthenticated())
+      console.log('User:', req.user)
+      console.log('=====================\n')
+
       res.redirect(process.env.CLIENT_URL)
     })
   }
