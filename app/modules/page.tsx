@@ -18,99 +18,99 @@ const modules = [
   },
   {
     id: "1",
-    title: "Project Setup & Design System",
-    description: "Learn how to set up a modern web application using Next.js 14, TypeScript, and Tailwind CSS. We'll implement a robust design system using shadcn/ui components that will serve as the foundation for your entire application.",
-    duration: "45 mins",
+    title: "Setting Up Your Development Environment",
+    description: "Learn how to install all the essential tools and software needed to follow along with the course. This video will guide you step-by-step through the installation process, ensuring you are fully equipped and ready to dive into the next lessons.",
+    duration: "12 mins",
     icon: <Palette className="w-5 h-5" />,
-    skills: ["Next.js 14", "TypeScript", "Tailwind CSS", "shadcn/ui"]
+    skills: ["Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "GitHub", "Node.js", "MongoDB", "React"]
   },
   {
     id: "2",
-    title: "Setting Up Your Development Environment",
-    description: "Configure your development environment with the necessary tools and extensions. Learn best practices for project structure and code organization that will make your development process smoother.",
-    duration: "30 mins",
+    title: "From Design to Code: Building Your Project’s Foundation",
+    description: "Learn how to transform a website or SaaS screenshot into a fully functional site that serves as the foundation for your project. This video covers where to find high-quality designs and guides you through using Cursor to efficiently convert them into clean, usable code.",
+    duration: "13 mins",
     icon: <Code className="w-5 h-5" />,
-    skills: ["VS Code", "Git", "npm", "Environment Setup"]
+    skills: ["Cursor", "Image to Code", "Design to Code", "How to Find Designs"]
   },
   {
     id: "3",
     title: "Enabling Google Login for Your Web App",
-    description: "Implement secure authentication using Google OAuth. Learn how to handle user sessions, protect routes, and manage user data securely in your application.",
-    duration: "45 mins",
+    description: "Learn how to set up Google login for your web app step by step. This video will guide you through obtaining the necessary credentials from the Google Cloud Console and configuring your site to allow users to sign in with their Google accounts, enhancing security and user experience.",
+    duration: "16 mins",
     icon: <Users className="w-5 h-5" />,
-    skills: ["OAuth 2.0", "Authentication", "Session Management"]
+    skills: ["Google OAuth 2.0", "Authentication", "Session Management", "Google Cloud Console", "Saving Credentials"]
   },
   {
     id: "4",
     title: "Installing MongoDB & Saving Google Login Users",
-    description: "Set up MongoDB to store user data and integrate it with your authentication system. Learn database modeling, CRUD operations, and best practices for data management.",
-    duration: "50 mins",
+    description: "In this video, you'll learn how to install MongoDB and set it up for your project. Follow along as we save the first pieces of data—users who log in using Google. This foundational step will prepare your database for managing user information efficiently.",
+    duration: "20 mins",
     icon: <Database className="w-5 h-5" />,
-    skills: ["MongoDB", "Database Design", "Data Modeling"]
+    skills: ["MongoDB", "Mongo Atlas", "Database Design", "Data Modeling", "Saving Users"]
   },
   {
     id: "5",
-    title: "Integrating Stripe Payments",
-    description: "Add payment processing to your application using Stripe. Learn how to handle subscriptions, manage payment flows, and implement proper error handling.",
-    duration: "55 mins",
+    title: "Integrating Stripe Payments: From Test Mode to Live Transactions",
+    description: "Discover how to integrate Stripe as your payment gateway, starting from test mode and progressing to live transactions with a real credit card. This video covers the entire process, including setting up Stripe, testing payments, and going live, so you can confidently handle payments in your web app.",
+    duration: "34 mins",
     icon: <Lock className="w-5 h-5" />,
-    skills: ["Stripe API", "Payment Processing", "Error Handling"]
+    skills: ["Stripe API", "Payment Processing", "Error Handling", "Test Mode", "Live Transactions", "Confetti Success Page Animation"]
   },
   {
     id: "6",
-    title: "Building the Interactive Dashboard",
-    description: "Create an interactive dashboard that displays user progress, course content, and analytics. Learn how to implement data visualization and real-time updates.",
-    duration: "65 mins",
+    title: "Building the Dashboard with the Course Videos and Statistics",
+    description: "Learn how to create a dynamic course dashboard that organizes your videos and displays key user statistics. This video walks you through designing and coding the interface, making it easy for users to access content and track their progress.",
+    duration: "1 hour and  20mins",
     icon: <LayoutDashboard className="w-5 h-5" />,
-    skills: ["Data Visualization", "Real-time Updates", "User Interface"]
+    skills: ["Data Visualization", "Charts", "Dynamic Map", "User Count", "Members Count", "Real-time Updates", "User Interface"]
   },
   {
     id: "7",
-    title: "Admin Controls & Content Restrictions",
-    description: "Implement role-based access control and content restrictions. Learn how to create an admin panel and manage premium content access.",
-    duration: "45 mins",
+    title: "Setting Up Admin Controls & Restricting Content for Paid Users",
+    description: "In this video, you'll learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We’ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.",
+    duration: "37 mins",
     icon: <Settings className="w-5 h-5" />,
-    skills: ["Access Control", "Admin Panel", "Content Management"]
+    skills: ["Access Control", "Admin Panel", "Content Management", "User Roles", "Permissions", "Paywall"]
   },
   {
     id: "8",
-    title: "Analytics & User Tracking",
-    description: "Implement comprehensive analytics and user tracking. Learn how to monitor user behavior, track key metrics, and make data-driven decisions.",
-    duration: "40 mins",
+    title: "Customizing Your Web App: Logos, Text, and Final Touches",
+    description: "In this video, learn how to personalize your web app by adding your logo, updating text, and making final adjustments. We'll guide you through the finishing touches that give your project a polished, professional look.",
+    duration: "26 mins",
     icon: <Sparkles className="w-5 h-5" />,
-    skills: ["Analytics", "User Tracking", "Data Analysis"]
+    skills: ["Logos", "Text", "Final Touches", "Polished Look"]
   },
   {
     id: "9",
-    title: "API Development & Integration",
-    description: "Build robust API endpoints and integrate them with your frontend. Learn RESTful principles and secure API development practices.",
-    duration: "50 mins",
+    title: "Adding a Favicon, Animations, and Final Visual Touch-Ups",
+    description: "Learn how to add a favicon to your web app, incorporate animations, and apply final visual touch-ups. This video focuses on the small details that enhance user experience and give your project a polished finish.",
+    duration: "17 mins",
     icon: <Code className="w-5 h-5" />,
-    skills: ["API Design", "REST", "Backend Integration"]
+    skills: ["Favicon", "Animations", "Final Visual Touch-Ups", "User Experience", "Polished Finish"]
   },
   {
     id: "10",
-    title: "Deployment & Production",
-    description: "Deploy your application to production. Learn about different hosting options, environment configuration, and production best practices.",
-    duration: "45 mins",
+    title: "Building a Course Progress Tracker with a Progress Bar",
+    description: "In this video, you'll learn how I implemented the progress tracking system for the course. We'll guide you through tracking user progress, updating the database, and displaying a dynamic progress bar to keep students engaged and motivated.",
+    duration: "29 mins",
     icon: <Settings className="w-5 h-5" />,
-    skills: ["Deployment", "DevOps", "Production Setup"]
-  },
+    skills: [ "Progress Tracking", "Progress Bar", "Database", "User Experience"]
+  },  
   {
     id: "11",
-    title: "Testing & Quality Assurance",
-    description: "Implement comprehensive testing strategies. Learn about different types of testing and how to ensure your application's reliability.",
-    duration: "40 mins",
+    title: "Final Touches: Creating Static Pages",
+    description: "In this video, we’ll wrap up the project by creating the remaining static pages, including Modules and FAQ, and making final visual adjustments before the deployment off on your server.",
+    duration: "7 mins",
     icon: <Clock className="w-5 h-5" />,
-    skills: ["Testing", "QA", "Code Quality"]
+    skills: ["Creating StaticPages", "Final Visual Adjustments"]
   },
   {
     id: "12",
-    title: "Advanced Features & Updates",
-    description: "Explore advanced features and learn about maintaining and updating your application. Cover topics like WebSocket integration and real-time features.",
-    duration: "45 mins",
+    title: "Deploying Your Web App: Frontend, Backend, and Domain Setup",
+    description: "In this video, you’ll learn how to upload your code to GitHub, deploy the frontend to Vercel, and the backend to Render. We’ll also walk through linking your custom domain, zerocodeceo.com, to bring your web app live.",
+    duration: "26 mins",
     icon: <Sparkles className="w-5 h-5" />,
-    skills: ["WebSocket", "Real-time Features", "Maintenance"]
+    skills: ["GitHub", "Vercel", "Render", "Domain Setup", "Bringing Your Web App Live", "Deploying"]
   }
 ]
 
