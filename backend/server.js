@@ -23,11 +23,17 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/webhook', express.raw({type: 'application/json'}))
 app.use(express.json())
 app.use(cors({
-  origin: ['https://zerocodeceo.com', 'https://course-app-five-kappa.vercel.app', 'http://localhost:3000'],
+  origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie']
 }))
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
+  next();
+})
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -108,16 +114,21 @@ app.get('/auth/google/callback',
     session: true 
   }),
   function(req, res) {
-    console.log('=== Auth Callback ===')
-    console.log('Session ID:', req.sessionID)
-    console.log('Session:', req.session)
-    console.log('Auth status:', req.isAuthenticated())
-    console.log('User:', req.user)
-    console.log('Headers:', req.headers)
-    console.log('===================')
-    
-    res.header('X-Session-Id', req.sessionID)
-    res.redirect(process.env.CLIENT_URL)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+      }
+      console.log('=== Auth Callback ===')
+      console.log('Session ID:', req.sessionID)
+      console.log('Session:', req.session)
+      console.log('Auth status:', req.isAuthenticated())
+      console.log('User:', req.user)
+      console.log('Headers:', req.headers)
+      console.log('===================')
+      
+      res.header('X-Session-Id', req.sessionID)
+      res.redirect(process.env.CLIENT_URL)
+    });
   }
 )
 
@@ -131,10 +142,21 @@ app.get('/auth/status', (req, res) => {
   console.log('Cookies:', req.headers.cookie)
   console.log('===================')
   
-  res.json({
-    user: req.isAuthenticated() ? req.user : null,
-    sessionId: req.sessionID
-  })
+  if (req.isAuthenticated()) {
+    res.json({
+      user: req.user,
+      sessionId: req.sessionID
+    })
+  } else {
+    // Force session regeneration if not authenticated
+    req.session.regenerate((err) => {
+      if (err) console.error('Session regeneration error:', err);
+      res.json({
+        user: null,
+        sessionId: req.sessionID
+      })
+    });
+  }
 })
 
 app.get('/auth/logout', (req, res) => {
