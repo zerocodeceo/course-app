@@ -10,6 +10,7 @@ const User = require('./models/User')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 const app = express()
 app.set('trust proxy', 1)
@@ -20,7 +21,47 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err))
 
 // Middleware
-app.use('/webhook', express.raw({type: 'application/json'}))
+app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+  const sig = req.headers['stripe-signature']
+  let event
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
+    console.log('Webhook received:', event.type)
+  } catch (err) {
+    console.error('Webhook error:', err.message)
+    return res.status(400).send(`Webhook Error: ${err.message}`)
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object
+      console.log('Payment successful for session:', session.id)
+      
+      try {
+        // Update user to premium
+        const userId = session.metadata.userId
+        const user = await User.findById(userId)
+        
+        if (user) {
+          user.plan = 'premium'
+          user.purchaseDate = new Date()
+          await user.save()
+          console.log('User upgraded to premium:', userId)
+        }
+      } catch (error) {
+        console.error('Error updating user:', error)
+      }
+      break
+      
+    default:
+      console.log(`Unhandled event type ${event.type}`)
+  }
+
+  res.json({ received: true })
+})
+
 app.use(express.json())
 app.use(cors({
   origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
