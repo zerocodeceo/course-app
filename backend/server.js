@@ -105,10 +105,23 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
+  (req, res, next) => {
+    console.log('Auth request received:')
+    console.log('Headers:', req.headers)
+    console.log('User Agent:', req.headers['user-agent'])
+    console.log('Platform:', req.headers['sec-ch-ua-platform'])
+    next()
+  },
   passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
 app.get('/auth/google/callback', 
+  (req, res, next) => {
+    console.log('Callback received:')
+    console.log('Headers:', req.headers)
+    console.log('Query:', req.query)
+    next()
+  },
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
     session: true 
@@ -118,6 +131,7 @@ app.get('/auth/google/callback',
     console.log('User:', req.user)
     console.log('Session:', req.session)
     console.log('Cookies to be set:', res.getHeader('Set-Cookie'))
+    console.log('User Agent:', req.headers['user-agent'])
     console.log('=====================\n')
 
     req.session.save((err) => {
