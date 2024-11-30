@@ -67,12 +67,12 @@ export default function FAQPage() {
 
         <div className="max-w-3xl mx-auto text-center mt-12">
           <p className="text-gray-600">
-            Still have questions? Feel free to{' '}
+            Still have questions? Feel free to contact us at{' '} <br />
             <a 
-              href="mailto:contact@zerocodeceo.com" 
+              href="mailto:zerocodeceo@gmail.com" 
               className="text-purple-600 hover:text-purple-700 font-medium"
             >
-              contact us
+              zerocodeceo@gmail.com
             </a>
           </p>
         </div>
