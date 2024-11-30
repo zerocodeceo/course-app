@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { API_URL } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -12,7 +12,7 @@ const ReactConfetti = dynamic(() => import('react-confetti'), {
   ssr: false
 })
 
-export default function SuccessPage() {
+function SuccessContent() {
   const [verifying, setVerifying] = useState(true)
   const [error, setError] = useState('')
   const [showConfetti, setShowConfetti] = useState(false)
@@ -84,7 +84,7 @@ export default function SuccessPage() {
   }, [searchParams, router, refreshUser])
 
   return (
-    <MainLayout>
+    <>
       {showConfetti && (
         <ReactConfetti
           width={windowSize.width}
@@ -120,6 +120,23 @@ export default function SuccessPage() {
           )}
         </div>
       </div>
+    </>
+  )
+}
+
+// Main component with Suspense
+export default function SuccessPage() {
+  return (
+    <MainLayout>
+      <Suspense fallback={
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h1 className="text-2xl font-bold text-center mb-4">Loading...</h1>
+          </div>
+        </div>
+      }>
+        <SuccessContent />
+      </Suspense>
     </MainLayout>
   )
 } 
