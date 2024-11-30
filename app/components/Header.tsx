@@ -48,13 +48,20 @@ export function Header() {
     window.location.replace(`${API_URL}/auth/google`)
   }
 
-  const handleUpgrade = () => {
-    console.log('Starting upgrade process...')
-    console.log('Current URL:', window.location.href)
-    console.log('API URL:', API_URL)
-    console.log('User Agent:', window.navigator.userAgent)
-    
-    window.location.replace(`${API_URL}/auth/upgrade`)
+  const handleUpgrade = async () => {
+    try {
+      const response = await fetch(`${API_URL}/create-checkout-session`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await response.json()
+      
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error)
+    }
   }
 
   return (
