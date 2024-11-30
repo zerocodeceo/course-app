@@ -92,19 +92,21 @@ export function Header() {
       <div className="flex items-center gap-2">
         {user ? (
           <div className="flex items-center gap-2">
-            {!(user.plan === 'basic' && pathname === '/dashboard') && (
-              <Button
-                onClick={user.plan === 'premium' ? () => handleNavigation('/dashboard') : handleUpgrade}
-                size="sm"
-                className={`${
-                  user.plan === 'premium' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-purple-600 hover:bg-purple-700'
-                } text-white text-xs whitespace-nowrap px-2 md:px-4`}
-              >
-                {user.plan === 'premium' ? 'Dashboard' : 'Start Now'}
-              </Button>
-            )}
+            <Button
+              onClick={pathname === '/dashboard' && user.plan === 'basic' 
+                ? handleUpgrade 
+                : () => handleNavigation('/dashboard')}
+              size="sm"
+              className={`${
+                (pathname === '/dashboard' && user.plan === 'basic')
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-green-600 hover:bg-green-700'
+              } text-white text-xs whitespace-nowrap px-2 md:px-4`}
+            >
+              {pathname === '/dashboard' && user.plan === 'basic' 
+                ? 'Start Now' 
+                : 'Dashboard'}
+            </Button>
             <div className="hidden md:flex items-center gap-2">
               {user.profilePicture && (
                 <Image
