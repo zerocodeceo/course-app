@@ -58,6 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Detailed auth check error:', error)
       setUser(null)
+    } finally {
+      setLoading(false)
     }
   }
 

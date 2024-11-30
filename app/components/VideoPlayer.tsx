@@ -115,11 +115,9 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
             })
           },
           onStateChange: (event: PlayerStateEvent) => {
-            // Check if video is playing
             if (event.data === window.YT.PlayerState.PLAYING) {
               startTracking()
             }
-            // Check if video ended
             if (event.data === window.YT.PlayerState.ENDED) {
               const duration = playerRef.current?.getDuration() || 0
               onProgress({
@@ -144,6 +142,7 @@ export function VideoPlayer({ videoUrl, initialProgress = 0, onProgress }: Video
         playerRef.current.destroy()
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, initialProgress])
 
   const startTracking = () => {
