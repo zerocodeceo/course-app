@@ -3,13 +3,14 @@ import * as React from 'react'
 import { Button } from "@/components/ui/button"
 import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { navItems } from './MainLayout'
 import { API_URL } from '../lib/api'
 
 export function Header() {
   const { user, refreshUser } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const handleLogout = async () => {
     try {
@@ -47,6 +48,15 @@ export function Header() {
     window.location.replace(`${API_URL}/auth/google`)
   }
 
+  const handleUpgrade = () => {
+    console.log('Starting upgrade process...')
+    console.log('Current URL:', window.location.href)
+    console.log('API URL:', API_URL)
+    console.log('User Agent:', window.navigator.userAgent)
+    
+    window.location.replace(`${API_URL}/auth/upgrade`)
+  }
+
   return (
     <nav className="flex flex-wrap justify-between items-center py-4 px-4 md:px-16 bg-white shadow-sm">
       <div 
@@ -79,16 +89,22 @@ export function Header() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-2">
         {user ? (
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => handleNavigation('/dashboard')}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap px-2 md:px-4"
-            >
-              Dashboard
-            </Button>
+            {!(user.plan === 'basic' && pathname === '/dashboard') && (
+              <Button
+                onClick={user.plan === 'premium' ? () => handleNavigation('/dashboard') : handleUpgrade}
+                size="sm"
+                className={`${
+                  user.plan === 'premium' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-purple-600 hover:bg-purple-700'
+                } text-white text-xs whitespace-nowrap px-2 md:px-4`}
+              >
+                {user.plan === 'premium' ? 'Dashboard' : 'Start Now'}
+              </Button>
+            )}
             <div className="hidden md:flex items-center gap-2">
               {user.profilePicture && (
                 <Image

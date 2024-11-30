@@ -59,11 +59,11 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-            Build Apps Without Writing a Single Line of Code
+            Build the exact web app you&apos;re on right now—without writing a single line of code
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
-            If you have $30, 10 hours, and ideas for an app or startup, watch the video below NOW!
+            All you need is $30, 10 hours, and your ideas. Let&apos;s get started!
           </p>
 
           <div className="animate-fade-in-up animation-delay-300">
@@ -74,7 +74,7 @@ export default function Home() {
               }`}
             >
               {!user ? 'Start Building Your App Today' : 
-               user.plan === 'premium' ? 'Access Dashboard' : 'Upgrade to Premium'}
+               user.plan === 'premium' ? 'Access Dashboard' : 'Start Now'}
             </Button>
           </div>
 
@@ -117,7 +117,7 @@ export default function Home() {
             <div className="relative pt-[56.25%]">
               <iframe
                 className="absolute top-0 left-0 w-full h-full rounded-xl shadow-lg"
-                src="https://www.youtube.com/embed/8NLzc9kobDk"
+                src="https://www.youtube.com/embed/oBkJUIFc-ak"
                 title="YouTube video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
