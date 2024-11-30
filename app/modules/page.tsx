@@ -4,10 +4,18 @@ import { MainLayout } from '../components/MainLayout'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Code, Palette, Database, Lock, LayoutDashboard, Settings, Users, Paintbrush, Sparkles } from 'lucide-react'
+import { Clock, Code, Palette, Database, Lock, LayoutDashboard, Settings, Users, Sparkles } from 'lucide-react'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 
 const modules = [
+  {
+    id: "intro",
+    title: "Introduction to ZeroCodeCEO",
+    description: "Get started with an overview of the course, what you'll learn, and how to make the most of this learning experience. Learn about the tools we'll use and what you'll be able to build by the end.",
+    duration: "30 mins",
+    icon: <Sparkles className="w-5 h-5" />,
+    skills: ["Course Overview", "Tools Introduction", "Learning Path"]
+  },
   {
     id: "1",
     title: "Project Setup & Design System",
@@ -26,14 +34,6 @@ const modules = [
   },
   {
     id: "3",
-    title: "From Design to Code: Building Your Project's Foundation",
-    description: "Transform design concepts into functional code. Learn how to build responsive layouts, implement modern UI patterns, and create reusable components that will power your application.",
-    duration: "60 mins",
-    icon: <Paintbrush className="w-5 h-5" />,
-    skills: ["Responsive Design", "Component Architecture", "UI Patterns"]
-  },
-  {
-    id: "4",
     title: "Enabling Google Login for Your Web App",
     description: "Implement secure authentication using Google OAuth. Learn how to handle user sessions, protect routes, and manage user data securely in your application.",
     duration: "45 mins",
@@ -41,7 +41,7 @@ const modules = [
     skills: ["OAuth 2.0", "Authentication", "Session Management"]
   },
   {
-    id: "5",
+    id: "4",
     title: "Installing MongoDB & Saving Google Login Users",
     description: "Set up MongoDB to store user data and integrate it with your authentication system. Learn database modeling, CRUD operations, and best practices for data management.",
     duration: "50 mins",
@@ -49,44 +49,68 @@ const modules = [
     skills: ["MongoDB", "Database Design", "Data Modeling"]
   },
   {
-    id: "6",
-    title: "Integrating Stripe Payments: From Test Mode to Live Transactions",
+    id: "5",
+    title: "Integrating Stripe Payments",
     description: "Add payment processing to your application using Stripe. Learn how to handle subscriptions, manage payment flows, and implement proper error handling.",
     duration: "55 mins",
     icon: <Lock className="w-5 h-5" />,
     skills: ["Stripe API", "Payment Processing", "Error Handling"]
   },
   {
-    id: "7",
-    title: "Building the Dashboard with the Course Videos and Statistics",
+    id: "6",
+    title: "Building the Interactive Dashboard",
     description: "Create an interactive dashboard that displays user progress, course content, and analytics. Learn how to implement data visualization and real-time updates.",
     duration: "65 mins",
     icon: <LayoutDashboard className="w-5 h-5" />,
     skills: ["Data Visualization", "Real-time Updates", "User Interface"]
   },
   {
-    id: "8",
-    title: "Setting Up Admin Controls & Restricting Content for Paid Users",
+    id: "7",
+    title: "Admin Controls & Content Restrictions",
     description: "Implement role-based access control and content restrictions. Learn how to create an admin panel and manage premium content access.",
     duration: "45 mins",
     icon: <Settings className="w-5 h-5" />,
     skills: ["Access Control", "Admin Panel", "Content Management"]
   },
   {
-    id: "9",
-    title: "Customizing Your Web App: Logos, Text, and Final Touches",
-    description: "Learn how to customize the application's appearance, add your branding, and implement dynamic content management for a professional finish.",
+    id: "8",
+    title: "Analytics & User Tracking",
+    description: "Implement comprehensive analytics and user tracking. Learn how to monitor user behavior, track key metrics, and make data-driven decisions.",
     duration: "40 mins",
     icon: <Sparkles className="w-5 h-5" />,
-    skills: ["Branding", "Content Management", "UI/UX"]
+    skills: ["Analytics", "User Tracking", "Data Analysis"]
+  },
+  {
+    id: "9",
+    title: "API Development & Integration",
+    description: "Build robust API endpoints and integrate them with your frontend. Learn RESTful principles and secure API development practices.",
+    duration: "50 mins",
+    icon: <Code className="w-5 h-5" />,
+    skills: ["API Design", "REST", "Backend Integration"]
   },
   {
     id: "10",
-    title: "Adding a Favicon, Animations, and Final Visual Touch-Ups",
-    description: "Polish your application with smooth animations, loading states, and visual feedback. Ensure a professional and engaging user experience.",
-    duration: "35 mins",
+    title: "Deployment & Production",
+    description: "Deploy your application to production. Learn about different hosting options, environment configuration, and production best practices.",
+    duration: "45 mins",
+    icon: <Settings className="w-5 h-5" />,
+    skills: ["Deployment", "DevOps", "Production Setup"]
+  },
+  {
+    id: "11",
+    title: "Testing & Quality Assurance",
+    description: "Implement comprehensive testing strategies. Learn about different types of testing and how to ensure your application's reliability.",
+    duration: "40 mins",
     icon: <Clock className="w-5 h-5" />,
-    skills: ["Animations", "Performance", "User Experience"]
+    skills: ["Testing", "QA", "Code Quality"]
+  },
+  {
+    id: "12",
+    title: "Advanced Features & Updates",
+    description: "Explore advanced features and learn about maintaining and updating your application. Cover topics like WebSocket integration and real-time features.",
+    duration: "45 mins",
+    icon: <Sparkles className="w-5 h-5" />,
+    skills: ["WebSocket", "Real-time Features", "Maintenance"]
   }
 ]
 
@@ -108,18 +132,51 @@ export default function ModulesPage() {
         </div>
 
         <Tabs defaultValue="1" className="w-full">
-          <TabsList className="grid grid-cols-2 lg:grid-cols-5 mb-8 bg-white/80 backdrop-blur-sm shadow rounded-lg">
-            {[1, 2, 3, 4, 5].map((group) => (
+          <TabsList className="grid grid-cols-2 lg:grid-cols-7 mb-8 bg-white/80 backdrop-blur-sm shadow rounded-lg">
+            <TabsTrigger value="intro">Intro</TabsTrigger>
+            {[1, 2, 3, 4, 5, 6].map((group) => (
               <TabsTrigger key={group} value={group.toString()}>
                 {`${group * 2 - 1}-${group * 2}`}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {[1, 2, 3, 4, 5].map((group) => (
+          <TabsContent value="intro">
+            <div className="grid gap-6">
+              <Card key="intro" className="bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-purple-100/80 rounded-lg">
+                      {modules[0].icon}
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl mb-1">{modules[0].title}</CardTitle>
+                      <CardDescription className="text-sm text-gray-500">
+                        Duration: {modules[0].duration}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-4">
+                    {modules[0].description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {modules[0].skills.map((skill) => (
+                      <Badge key={skill} variant="secondary" className="bg-purple-100/50">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {[1, 2, 3, 4, 5, 6].map((group) => (
             <TabsContent key={group} value={group.toString()}>
               <div className="grid gap-6">
-                {modules.slice((group - 1) * 2, group * 2).map((module) => (
+                {modules.slice(group * 2 - 1, group * 2 + 1).map((module) => (
                   <Card key={module.id} className="bg-white/80 backdrop-blur-sm">
                     <CardHeader>
                       <div className="flex items-center gap-4">

@@ -511,6 +511,43 @@ app.get('/user-progress', async (req, res) => {
   }
 })
 
+app.post('/admin/add-videos', async (req, res) => {
+  if (!req.user || req.user.email !== 'bbertapeli@gmail.com') {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  try {
+    const newVideos = await CourseContent.insertMany([
+      {
+        id: '11',
+        title: '11. Handling Errors & Logging',
+        description: 'Learn how to implement proper error handling and logging in your application. We\'ll cover error boundaries in React, backend error middleware, and setting up logging systems to track and debug issues in production.',
+        videoUrl: 'https://www.youtube.com/embed/your-video-id',
+        order: 11
+      },
+      {
+        id: '12',
+        title: '12. Testing Your Application',
+        description: 'Discover how to write and implement tests for your application. We\'ll cover unit testing with Jest, integration testing with React Testing Library, and end-to-end testing with Cypress to ensure your application works reliably.',
+        videoUrl: 'https://www.youtube.com/embed/your-video-id',
+        order: 12
+      },
+      {
+        id: '13',
+        title: '13. Advanced Features & Future Updates',
+        description: 'Explore advanced features and upcoming updates for your application. Learn about implementing real-time features, WebSocket integration, and other advanced topics that will take your app to the next level.',
+        videoUrl: 'https://www.youtube.com/embed/your-video-id',
+        order: 13
+      }
+    ])
+
+    res.json({ success: true, videos: newVideos })
+  } catch (error) {
+    console.error('Error adding new videos:', error)
+    res.status(500).json({ error: 'Failed to add new videos' })
+  }
+})
+
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
