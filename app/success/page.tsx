@@ -1,105 +1,125 @@
 "use client"
-import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { MainLayout } from '../components/MainLayout'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { useRouter } from 'next/navigation'
-import { showToast } from '../components/Toast'
+import { useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { API_URL } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
+import { MainLayout } from '../components/MainLayout'
+import dynamic from 'next/dynamic'
+import { Button } from "@/components/ui/button"
 
-function SuccessContent() {
+// Import confetti dynamically to avoid SSR issues
+const ReactConfetti = dynamic(() => import('react-confetti'), {
+  ssr: false
+})
+
+export default function SuccessPage() {
+  const [verifying, setVerifying] = useState(true)
+  const [error, setError] = useState('')
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0
+  })
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [success, setSuccess] = useState(false)
+  const { refreshUser } = useAuth()
+
+  // Update window size on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const verifyPayment = async () => {
-      try {
-        const sessionId = searchParams.get('session_id')
-        if (!sessionId) {
-          showToast('Invalid session', 'error')
-          router.push('/')
-          return
-        }
+      const session_id = searchParams.get('session_id')
+      // If test=true, skip verification
+      if (searchParams.get('test') === 'true') {
+        setVerifying(false)
+        setShowConfetti(true)
+        return
+      }
 
+      if (!session_id) {
+        setError('No session ID found')
+        setVerifying(false)
+        return
+      }
+
+      try {
         const response = await fetch(`${API_URL}/verify-payment`, {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
-          body: JSON.stringify({ sessionId })
+          body: JSON.stringify({ session_id }),
         })
 
-        const data = await response.json()
-        if (data.success) {
-          setSuccess(true)
-          showToast('Payment successful!', 'success')
-        } else {
-          showToast('Payment verification failed', 'error')
-          router.push('/')
+        if (!response.ok) {
+          throw new Error('Payment verification failed')
         }
-      } catch (_err) {
-        showToast('Something went wrong', 'error')
-        router.push('/')
+
+        await refreshUser()
+        setShowConfetti(true)
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 5000) // Give time to enjoy the confetti
+      } catch (error) {
+        console.error('Payment verification error:', error)
+        setError('Payment verification failed')
       } finally {
-        setLoading(false)
+        setVerifying(false)
       }
     }
 
     verifyPayment()
-  }, [router, searchParams])
+  }, [searchParams, router, refreshUser])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
-      </div>
-    )
-  }
-
-  return (
-    <Card className="max-w-lg mx-auto mt-12">
-      <CardHeader>
-        <CardTitle className="text-center text-2xl">
-          {success ? 'Payment Successful!' : 'Verifying Payment...'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-center">
-        {success ? (
-          <>
-            <p className="mb-6 text-gray-600">
-              Thank you for upgrading to Premium! You now have access to all course content.
-            </p>
-            <Button 
-              onClick={() => router.push('/dashboard')}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Go to Dashboard
-            </Button>
-          </>
-        ) : (
-          <p className="text-gray-600">
-            Please wait while we verify your payment...
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-export default function SuccessPage() {
   return (
     <MainLayout>
-      <Suspense fallback={
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      {showConfetti && (
+        <ReactConfetti
+          width={windowSize.width}
+          height={windowSize.height}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.2}
+        />
+      )}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold text-center mb-4">
+            {verifying ? 'Verifying Payment...' : error ? 'Payment Error' : 'Payment Successful! 🎉'}
+          </h1>
+          {error ? (
+            <p className="text-red-500 text-center">{error}</p>
+          ) : (
+            <>
+              <p className="text-gray-600 text-center mb-6">
+                {verifying 
+                  ? 'Please wait while we verify your payment...'
+                  : 'Thank you for your purchase! You now have full access to all premium content. Redirecting to dashboard...'}
+              </p>
+              {!verifying && (
+                <Button 
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  Go to Dashboard Now
+                </Button>
+              )}
+            </>
+          )}
         </div>
-      }>
-        <SuccessContent />
-      </Suspense>
+      </div>
     </MainLayout>
   )
 } 

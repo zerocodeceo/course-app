@@ -240,7 +240,7 @@ app.post('/create-checkout-session', async (req, res) => {
             currency: 'usd',
             product_data: {
               name: 'Premium Plan',
-              description: 'Learn to build a web app from scratch using AI. This course covers front-end, back-end development, and integrating AI features, giving you the skills to create and deploy intelligent web applications. Perfect for beginners and developers alike.',
+              description: 'Learn to build a web app from scratch using AI...',
             },
             unit_amount: 2999,
           },
@@ -249,7 +249,7 @@ app.post('/create-checkout-session', async (req, res) => {
       ],
       mode: 'payment',
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: process.env.CLIENT_URL,
+      cancel_url: `${process.env.CLIENT_URL}`,
       customer_email: req.user.email,
       metadata: {
         userId: req.user._id.toString()

@@ -64,7 +64,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshUser = async () => {
-    await checkAuthStatus()
+    try {
+      const response = await fetch(`${API_URL}/auth/status`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      const data = await response.json()
+      if (data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error)
+      setUser(null)
+    }
   }
 
   useEffect(() => {

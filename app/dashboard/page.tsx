@@ -624,6 +624,14 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+      {user?.email === 'bbertapeli@gmail.com' && (
+        <Button
+          onClick={() => router.push('/success?test=true')}
+          className="bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          Test Success Page
+        </Button>
+      )}
     </MainLayout>
   )
 } 
