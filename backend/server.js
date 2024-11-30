@@ -114,49 +114,38 @@ app.get('/auth/google/callback',
     session: true 
   }),
   function(req, res) {
+    console.log('\n=== Google Callback ===')
+    console.log('User:', req.user)
+    console.log('Session:', req.session)
+    console.log('Cookies to be set:', res.getHeader('Set-Cookie'))
+    console.log('=====================\n')
+
     req.session.save((err) => {
       if (err) {
-        console.error('Session save error:', err);
+        console.error('Session save error:', err)
       }
-      console.log('=== Auth Callback ===')
-      console.log('Session ID:', req.sessionID)
-      console.log('Session:', req.session)
-      console.log('Auth status:', req.isAuthenticated())
-      console.log('User:', req.user)
-      console.log('Headers:', req.headers)
-      console.log('===================')
-      
-      res.header('X-Session-Id', req.sessionID)
       res.redirect(process.env.CLIENT_URL)
-    });
+    })
   }
 )
 
 app.get('/auth/status', (req, res) => {
-  console.log('=== Auth Status Check ===')
+  console.log('\n=== Auth Status Check ===')
   console.log('Session ID:', req.sessionID)
   console.log('Session:', req.session)
   console.log('Auth status:', req.isAuthenticated())
   console.log('User:', req.user)
   console.log('Headers:', req.headers)
   console.log('Cookies:', req.headers.cookie)
-  console.log('===================')
+  console.log('=====================\n')
   
-  if (req.isAuthenticated()) {
-    res.json({
-      user: req.user,
-      sessionId: req.sessionID
-    })
-  } else {
-    // Force session regeneration if not authenticated
-    req.session.regenerate((err) => {
-      if (err) console.error('Session regeneration error:', err);
-      res.json({
-        user: null,
-        sessionId: req.sessionID
-      })
-    });
-  }
+  res.json({
+    user: req.isAuthenticated() ? req.user : null,
+    sessionId: req.sessionID,
+    sessionExists: !!req.session,
+    hasUser: !!req.user,
+    isAuthenticated: req.isAuthenticated()
+  })
 })
 
 app.get('/auth/logout', (req, res) => {

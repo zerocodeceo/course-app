@@ -1,6 +1,7 @@
 const getApiUrl = () => {
   // Check if we're in the browser
   if (typeof window === 'undefined') {
+    console.log('Server-side rendering, using production URL')
     return 'https://zerocodeceo.onrender.com'
   }
 
@@ -16,7 +17,8 @@ const getApiUrl = () => {
     hostname: window.location.hostname,
     isProduction,
     selectedUrl: apiUrl,
-    currentUrl: window.location.href
+    currentUrl: window.location.href,
+    cookies: document.cookie
   })
 
   return apiUrl

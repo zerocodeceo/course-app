@@ -31,7 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status with:', `${API_URL}/auth/status`)
+      console.log('Starting auth status check')
+      console.log('Current cookies:', document.cookie)
+      
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
         headers: {
@@ -40,22 +42,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       
-      console.log('Response headers:', response.headers)
-      console.log('Document cookies:', document.cookie)
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
       const data = await response.json()
-      console.log('Auth status response:', data)
+      console.log('Auth status full response:', data)
       
       if (data.user) {
+        console.log('User authenticated:', data.user.email)
         setUser(data.user)
-        console.log('Session ID:', data.sessionId)
       } else {
+        console.log('No user found in response')
         setUser(null)
       }
     } catch (error) {
-      console.error('Error checking auth status:', error)
+      console.error('Detailed auth check error:', error)
       setUser(null)
-    } finally {
-      setLoading(false)
     }
   }
 
