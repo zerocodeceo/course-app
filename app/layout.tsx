@@ -17,7 +17,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ZeroCodeCEO",
+  title: "ZeroCodeCEO | Learn to Build Web Apps & Startups with AI, No Coding Required",
   description: "Build Apps Without Writing a Single Line of Code",
   icons: {
     icon: [

@@ -131,7 +131,7 @@ export default function ModulesPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="1" className="w-full">
+        <Tabs defaultValue="intro" className="w-full">
           <TabsList className="grid grid-cols-2 lg:grid-cols-7 mb-8 bg-white/80 backdrop-blur-sm shadow rounded-lg">
             <TabsTrigger value="intro">Intro</TabsTrigger>
             {[1, 2, 3, 4, 5, 6].map((group) => (
