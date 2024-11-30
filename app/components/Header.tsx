@@ -53,6 +53,7 @@ export function Header() {
           alt="ZeroCodeCEO"
           width={200}
           height={48}
+          className="w-[150px] md:w-[200px] h-auto"
           priority
         />
       </div>
