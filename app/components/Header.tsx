@@ -51,14 +51,14 @@ export function Header() {
     <nav className="flex flex-wrap justify-between items-center py-4 px-4 md:px-16 bg-white shadow-sm">
       <div 
         onClick={() => handleNavigation('/')} 
-        className="flex items-center cursor-pointer w-[120px] md:w-auto"
+        className="flex items-center cursor-pointer"
       >
         <Image
           src="/logo.png"
           alt="ZeroCodeCEO"
           width={200}
           height={48}
-          className="w-full h-auto"
+          className="w-[120px] md:w-[200px] h-auto"
           priority
         />
       </div>
