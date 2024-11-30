@@ -38,14 +38,13 @@ app.use((req, res, next) => {
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    autoRemove: 'native'
+    ttl: 24 * 60 * 60
   }),
-  name: 'sessionId',
+  name: 'sid',
   cookie: {
     secure: true,
     httpOnly: true,
@@ -122,20 +121,20 @@ app.get('/auth/google/callback',
     session: true 
   }),
   function(req, res) {
-    req.session.save((err) => {
+    req.session.regenerate((err) => {
       if (err) {
-        console.error('Session save error:', err)
+        console.error('Session regenerate error:', err)
         return res.redirect(`${process.env.CLIENT_URL}/login`)
       }
 
-      console.log('\n=== Auth Callback ===')
-      console.log('Session ID:', req.sessionID)
-      console.log('Session:', req.session)
-      console.log('Auth status:', req.isAuthenticated())
-      console.log('User:', req.user)
-      console.log('=====================\n')
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login`)
+        }
 
-      res.redirect(process.env.CLIENT_URL)
+        res.redirect(process.env.CLIENT_URL)
+      })
     })
   }
 )
