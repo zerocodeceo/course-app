@@ -26,40 +26,51 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
   let event
 
   try {
+    if (!endpointSecret) {
+      console.error('Webhook secret is not configured')
+      return res.status(400).send('Webhook secret not configured')
+    }
+
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
     console.log('Webhook received:', event.type)
-  } catch (err) {
-    console.error('Webhook error:', err.message)
-    return res.status(400).send(`Webhook Error: ${err.message}`)
-  }
 
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object
-      console.log('Payment successful for session:', session.id)
-      
-      try {
-        // Update user to premium
-        const userId = session.metadata.userId
-        const user = await User.findById(userId)
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object
+        console.log('Payment successful for session:', session.id)
         
-        if (user) {
+        try {
+          const userId = session.metadata.userId
+          if (!userId) {
+            console.error('No userId in session metadata')
+            return res.status(400).send('No userId in session metadata')
+          }
+
+          const user = await User.findById(userId)
+          if (!user) {
+            console.error('User not found:', userId)
+            return res.status(404).send('User not found')
+          }
+
           user.plan = 'premium'
           user.purchaseDate = new Date()
           await user.save()
           console.log('User upgraded to premium:', userId)
+        } catch (error) {
+          console.error('Error updating user:', error)
+          return res.status(500).send('Error updating user')
         }
-      } catch (error) {
-        console.error('Error updating user:', error)
-      }
-      break
-      
-    default:
-      console.log(`Unhandled event type ${event.type}`)
-  }
+        break
 
-  res.json({ received: true })
+      default:
+        console.log(`Unhandled event type ${event.type}`)
+    }
+
+    res.json({ received: true })
+  } catch (err) {
+    console.error('Webhook error:', err.message)
+    return res.status(400).send(`Webhook Error: ${err.message}`)
+  }
 })
 
 app.use(express.json())
@@ -258,9 +269,13 @@ app.post('/verify-payment', async (req, res) => {
   }
 
   const { session_id } = req.body
+  if (!session_id) {
+    return res.status(400).json({ error: 'No session ID provided' })
+  }
 
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id)
+    console.log('Payment session:', session)
 
     if (session.payment_status === 'paid' && session.metadata.userId === req.user._id.toString()) {
       const user = await User.findById(req.user._id)
