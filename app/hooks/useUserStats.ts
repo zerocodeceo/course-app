@@ -4,16 +4,29 @@ import { API_URL } from '../lib/api'
 
 type UserStats = {
   totalPremiumUsers: number
+  totalVisitors: number
+  totalRevenue: number
   recentPremiumUsers: Array<{
     profilePicture: string
     displayName: string
+  }>
+  premiumUserLocations: Array<{
+    lat: number
+    lng: number
+    user: {
+      displayName: string
+      profilePicture: string
+    }
   }>
 }
 
 export function useUserStats() {
   const [stats, setStats] = useState<UserStats>({
     totalPremiumUsers: 0,
-    recentPremiumUsers: []
+    totalVisitors: 0,
+    totalRevenue: 0,
+    recentPremiumUsers: [],
+    premiumUserLocations: []
   })
   const [loading, setLoading] = useState(true)
 
