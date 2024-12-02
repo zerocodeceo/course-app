@@ -11,7 +11,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
-const axios = require('axios')
+
 
 const app = express()
 app.set('trust proxy', 1)

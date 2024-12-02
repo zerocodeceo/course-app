@@ -3,6 +3,17 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../lib/api'
 
 type UserStats = {
+  totalMembers: number
+  totalRevenue: number
+  totalVisitors: number
+  memberGrowth: {
+    labels: string[]
+    data: number[]
+  }
+  visitorLocations: Array<{
+    latitude: number
+    longitude: number
+  }>
   totalPremiumUsers: number
   recentPremiumUsers: Array<{
     profilePicture: string
@@ -12,6 +23,11 @@ type UserStats = {
 
 export function useUserStats() {
   const [stats, setStats] = useState<UserStats>({
+    totalMembers: 0,
+    totalRevenue: 0,
+    totalVisitors: 0,
+    memberGrowth: { labels: [], data: [] },
+    visitorLocations: [],
     totalPremiumUsers: 0,
     recentPremiumUsers: []
   })
@@ -20,7 +36,7 @@ export function useUserStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/user-stats`, {
+        const response = await fetch(`${API_URL}/dashboard-stats`, {
           credentials: 'include'
         })
         const data = await response.json()
