@@ -166,7 +166,18 @@ app.get('/auth/google/callback',
   }
 )
 
-app.get('/auth/status', (req, res) => {
+app.get('/auth/status', async (req, res) => {
+  if (req.isAuthenticated()) {
+    try {
+      // Update last login time when checking status
+      await User.findByIdAndUpdate(req.user._id, {
+        lastLogin: new Date()
+      })
+    } catch (error) {
+      console.error('Error updating lastLogin:', error)
+    }
+  }
+
   res.json({
     user: req.isAuthenticated() ? req.user : null,
     sessionId: req.sessionID,
