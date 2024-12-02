@@ -17,10 +17,7 @@ const userProgressSchema = new mongoose.Schema({
       required: true
     }
   },
-  videoId: {
-    type: String,
-    required: true
-  },
+  videoId: String,
   duration: {
     type: Number,
     default: 0
@@ -39,8 +36,7 @@ const userProgressSchema = new mongoose.Schema({
   }
 })
 
-// Compound index to ensure unique progress entries per user and video
-userProgressSchema.index({ userId: 1, videoId: 1 }, { unique: true })
+// Remove the compound index since we want multiple entries per user
 userProgressSchema.index({ location: '2dsphere' })
 
 module.exports = mongoose.model('UserProgress', userProgressSchema) 

@@ -54,9 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const saveUserLocation = async () => {
     try {
+      console.log('Getting user location...')
       const location = await getUserLocation()
+      console.log('Location obtained:', location)
       
-      await fetch(`${API_URL}/auth/location`, {
+      const response = await fetch(`${API_URL}/auth/location`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -64,6 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify(location),
       })
+      
+      const data = await response.json()
+      console.log('Location save response:', data)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save location: ${data.error}`)
+      }
     } catch (error) {
       console.error('Error saving location:', error)
     }
