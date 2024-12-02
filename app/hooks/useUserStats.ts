@@ -13,12 +13,14 @@ type UserStats = {
   }>
 }
 
+const initialStats: UserStats = {
+  totalMembers: 0,
+  totalRevenue: 0,
+  visitorLocations: []
+}
+
 export function useUserStats() {
-  const [stats, setStats] = useState<UserStats>({
-    totalMembers: 0,
-    totalRevenue: 0,
-    visitorLocations: []
-  })
+  const [stats, setStats] = useState<UserStats>(initialStats)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,10 +29,17 @@ export function useUserStats() {
         const response = await fetch(`${API_URL}/dashboard-stats`, {
           credentials: 'include'
         })
+        if (!response.ok) {
+          throw new Error('Failed to fetch stats')
+        }
         const data = await response.json()
-        setStats(data)
+        setStats({
+          totalMembers: data.totalMembers || 0,
+          totalRevenue: data.totalRevenue || 0,
+          visitorLocations: data.visitorLocations || []
+        })
       } catch (error) {
-        // Silent fail in production
+        setStats(initialStats)
       } finally {
         setLoading(false)
       }

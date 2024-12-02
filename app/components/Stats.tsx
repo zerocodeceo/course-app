@@ -16,8 +16,7 @@ export function Stats() {
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Only proceed if we have the container and data
-    if (!mapContainerRef.current || !data) return
+    if (!mapContainerRef.current) return
 
     // Initialize map only once
     if (!mapRef.current) {
@@ -37,27 +36,29 @@ export function Stats() {
     }
 
     // Clear existing markers
-    mapRef.current.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
-        layer.remove()
-      }
-    })
-
-    // Add markers only if we have visitor locations
-    if (data.visitorLocations && data.visitorLocations.length > 0) {
-      data.visitorLocations.forEach((location: Location) => {
-        const { latitude, longitude } = location.coordinates
-        if (latitude && longitude) {
-          L.marker([latitude, longitude], {
-            icon: L.divIcon({
-              className: 'custom-div-icon',
-              html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
-              iconSize: [12, 12],
-              iconAnchor: [6, 6]
-            })
-          }).addTo(mapRef.current!)
+    if (mapRef.current) {
+      mapRef.current.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          layer.remove()
         }
       })
+
+      // Add new markers
+      if (data.visitorLocations.length > 0) {
+        data.visitorLocations.forEach((location: Location) => {
+          const { latitude, longitude } = location.coordinates
+          if (typeof latitude === 'number' && typeof longitude === 'number') {
+            L.marker([latitude, longitude], {
+              icon: L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+              })
+            }).addTo(mapRef.current!)
+          }
+        })
+      }
     }
 
     return () => {
@@ -66,7 +67,7 @@ export function Stats() {
         mapRef.current = null
       }
     }
-  }, [data])
+  }, [data.visitorLocations])
 
   if (isLoading) {
     return (
@@ -86,21 +87,19 @@ export function Stats() {
     )
   }
 
-  if (!data) return null
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold">Total Members</h3>
           <p className="text-2xl font-bold text-purple-600">
-            {(data.totalMembers || 0).toLocaleString()}
+            {data.totalMembers.toLocaleString()}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold">Total Revenue</h3>
           <p className="text-2xl font-bold text-green-600">
-            ${(data.totalRevenue || 0).toLocaleString(undefined, {
+            ${data.totalRevenue.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}
