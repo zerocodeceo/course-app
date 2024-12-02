@@ -271,64 +271,84 @@ app.get('/user-stats', async (req, res) => {
   }
 })
 
+// Add this constant at the top of the file with other constants
+const FIXED_LOCATIONS = [
+  // United States
+  { latitude: 40.7128, longitude: -74.0060 }, // New York
+  { latitude: 34.0522, longitude: -118.2437 }, // Los Angeles
+  { latitude: 41.8781, longitude: -87.6298 }, // Chicago
+  { latitude: 25.7617, longitude: -80.1918 }, // Miami
+  { latitude: 37.7749, longitude: -122.4194 }, // San Francisco
+  
+  // Europe
+  { latitude: 51.5074, longitude: -0.1278 }, // London
+  { latitude: 48.8566, longitude: 2.3522 }, // Paris
+  { latitude: 52.5200, longitude: 13.4050 }, // Berlin
+  { latitude: 41.9028, longitude: 12.4964 }, // Rome
+  { latitude: 40.4168, longitude: -3.7038 }, // Madrid
+  { latitude: 52.3676, longitude: 4.9041 }, // Amsterdam
+  
+  // Latin America
+  { latitude: -23.5505, longitude: -46.6333 }, // São Paulo
+  { latitude: -34.6037, longitude: -58.3816 }, // Buenos Aires
+  { latitude: 19.4326, longitude: -99.1332 }, // Mexico City
+  
+  // Asia
+  { latitude: 35.6762, longitude: 139.6503 }, // Tokyo
+  { latitude: 22.3193, longitude: 114.1694 }, // Hong Kong
+  { latitude: 1.3521, longitude: 103.8198 }, // Singapore
+  { latitude: 37.5665, longitude: 126.9780 }, // Seoul
+  
+  // Australia
+  { latitude: -33.8688, longitude: 151.2093 }, // Sydney
+  { latitude: -37.8136, longitude: 144.9631 }, // Melbourne
+  
+  // Canada
+  { latitude: 43.6532, longitude: -79.3832 }, // Toronto
+  { latitude: 49.2827, longitude: -123.1207 }, // Vancouver
+]
+
+// Update the dashboard-stats endpoint
 app.get('/dashboard-stats', async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
   try {
-    // Get all premium users sorted by purchase date
+    // Get all premium users
     const premiumUsers = await User.find({ plan: 'premium' })
       .sort({ purchaseDate: 1 })
 
     const totalSubscribers = premiumUsers.length
     const totalRevenue = totalSubscribers * 29.99
 
-    // Define major cities across regions
-    const majorCities = [
-      // United States
-      { city: 'New York', lat: 40.7128, lng: -74.0060 },
-      { city: 'Los Angeles', lat: 34.0522, lng: -118.2437 },
-      { city: 'Chicago', lat: 41.8781, lng: -87.6298 },
-      { city: 'Miami', lat: 25.7617, lng: -80.1918 },
-      { city: 'San Francisco', lat: 37.7749, lng: -122.4194 },
-      
-      // Canada
-      { city: 'Toronto', lat: 43.6532, lng: -79.3832 },
-      { city: 'Vancouver', lat: 49.2827, lng: -123.1207 },
-      { city: 'Montreal', lat: 45.5017, lng: -73.5673 },
-      
-      // Brazil
-      { city: 'São Paulo', lat: -23.5505, lng: -46.6333 },
-      { city: 'Rio de Janeiro', lat: -22.9068, lng: -43.1729 },
-      { city: 'Brasília', lat: -15.7975, lng: -47.8919 },
-      { city: 'Salvador', lat: -12.9714, lng: -38.5014 },
-      
-      // Europe
-      { city: 'London', lat: 51.5074, lng: -0.1278 },
-      { city: 'Paris', lat: 48.8566, lng: 2.3522 },
-      { city: 'Berlin', lat: 52.5200, lng: 13.4050 },
-      { city: 'Rome', lat: 41.9028, lng: 12.4964 },
-      { city: 'Madrid', lat: 40.4168, lng: -3.7038 },
-      { city: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
-      { city: 'Barcelona', lat: 41.3851, lng: 2.1734 },
-      { city: 'Lisbon', lat: 38.7223, lng: -9.1393 }
-    ]
+    // Get real locations from premium users who have shared their location
+    const realLocations = premiumUsers
+      .filter(user => user.location?.coordinates)
+      .map(user => ({
+        latitude: user.location.coordinates.latitude,
+        longitude: user.location.coordinates.longitude
+      }))
 
-    // Update the visitorLocations code
-    const visitorLocations = premiumUsers.map(() => {
-      // Get a random city from the array
-      const randomCity = majorCities[Math.floor(Math.random() * majorCities.length)]
-      
-      // Add a tiny random offset to prevent exact overlapping (-0.01 to 0.01)
-      const offset = () => (Math.random() - 0.5) * 0.02
-      
-      return {
-        lat: randomCity.lat + offset(),
-        lng: randomCity.lng + offset(),
-        city: randomCity.city // Optional: if you want to use the city name
+    // Combine real locations with fixed locations
+    // First, add all real locations
+    const visitorLocations = [...realLocations]
+
+    // Then add fixed locations until we reach 22 total locations
+    let fixedLocationsIndex = 0
+    while (visitorLocations.length < 22 && fixedLocationsIndex < FIXED_LOCATIONS.length) {
+      // Check if this fixed location is too close to any existing real location
+      const fixedLocation = FIXED_LOCATIONS[fixedLocationsIndex]
+      const isTooClose = realLocations.some(realLoc => 
+        Math.abs(realLoc.latitude - fixedLocation.latitude) < 1 && 
+        Math.abs(realLoc.longitude - fixedLocation.longitude) < 1
+      )
+
+      if (!isTooClose) {
+        visitorLocations.push(fixedLocation)
       }
-    })
+      fixedLocationsIndex++
+    }
 
     // Create growth data based on actual purchase dates
     const months = Array.from({ length: 12 }, (_, i) => {
@@ -365,7 +385,6 @@ app.get('/dashboard-stats', async (req, res) => {
       visitorLocations
     })
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
     res.status(500).json({ error: 'Error fetching dashboard stats' })
   }
 })
