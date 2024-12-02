@@ -91,16 +91,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-.custom-div-icon {
-  background: transparent;
-  border: none;
-}
-
-.marker-pin {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgb(168 85 247); /* Tailwind's purple-500 */
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
-}

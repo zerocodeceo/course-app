@@ -80,7 +80,7 @@ export default function Home() {
 
           <div className="animate-fade-in animation-delay-400 flex items-center gap-4">
             <div className="flex -space-x-4">
-              {stats?.recentPremiumUsers?.map((user, i) => (
+              {stats.recentPremiumUsers.map((user, i) => (
                 <div 
                   key={i}
                   className="relative group"
@@ -106,7 +106,7 @@ export default function Home() {
                 {statsLoading ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
-                  `${stats?.totalPremiumUsers || 0}+ students enrolled`
+                  `${stats.totalPremiumUsers}+ students enrolled`
                 )}
               </span>
             </div>
