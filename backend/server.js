@@ -149,19 +149,20 @@ app.get('/auth/google/callback',
     failureRedirect: `${process.env.CLIENT_URL}/login`,
     session: true 
   }),
-  function(req, res) {
-    req.login(req.user, (err) => {
-      if (err) {
-        return res.redirect(`${process.env.CLIENT_URL}/login`)
-      }
+  async function(req, res) {
+    try {
+      // Update last login time
+      await User.findByIdAndUpdate(req.user._id, {
+        lastLogin: new Date()
+      })
 
-      req.session.save((err) => {
-        if (err) {
-          return res.redirect(`${process.env.CLIENT_URL}/login`)
-        }
+      req.login(req.user, (err) => {
+        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
         res.redirect(process.env.CLIENT_URL)
       })
-    })
+    } catch (error) {
+      res.redirect(`${process.env.CLIENT_URL}/login`)
+    }
   }
 )
 
@@ -256,7 +257,7 @@ app.get('/user-stats', async (req, res) => {
   try {
     const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
     const recentPremiumUsers = await User.find({ plan: 'premium' })
-      .sort({ purchaseDate: -1 })
+      .sort({ lastLogin: -1 })
       .limit(5)
       .select('profilePicture displayName -_id')
 

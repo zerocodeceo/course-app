@@ -59,11 +59,11 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-          Build a webapp like this you are right now — without typing a single line of code
+          I built this web app in 2 days—without typing a single line of code.
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
-            All you need is $30 and 10 hours. Let&apos;s get started!
+          If you want to know how, watch the video below.
           </p>
 
           <div className="animate-fade-in-up animation-delay-300">
