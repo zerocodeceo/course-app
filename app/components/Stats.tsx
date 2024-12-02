@@ -3,21 +3,6 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserStats } from '../hooks/useUserStats'
 
-interface DashboardStats {
-  totalMembers: number
-  totalRevenue: number
-  memberGrowth: {
-    labels: string[]
-    data: number[]
-  }
-  visitorLocations: Array<{
-    coordinates: {
-      latitude: number
-      longitude: number
-    }
-  }>
-}
-
 export function Stats() {
   const { stats: data, loading: isLoading } = useUserStats()
   const mapRef = useRef<L.Map | null>(null)
@@ -52,12 +37,11 @@ export function Stats() {
       })
 
       // Add new markers
-      if (data.visitorLocations && data.visitorLocations.length > 0) {
+      if (data.visitorLocations?.length > 0) {
         data.visitorLocations.forEach((location) => {
-          if (location.coordinates && 
-              typeof location.coordinates.latitude === 'number' && 
-              typeof location.coordinates.longitude === 'number') {
-            L.marker([location.coordinates.latitude, location.coordinates.longitude], {
+          const { latitude, longitude } = location.coordinates
+          if (typeof latitude === 'number' && typeof longitude === 'number') {
+            L.marker([latitude, longitude], {
               icon: L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
