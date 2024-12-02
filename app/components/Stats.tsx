@@ -10,12 +10,6 @@ interface Location {
   }
 }
 
-interface UserStats {
-  totalMembers: number
-  totalRevenue: number
-  visitorLocations: Location[]
-}
-
 export function Stats() {
   const { stats: data, loading: isLoading } = useUserStats()
   const mapRef = useRef<L.Map | null>(null)

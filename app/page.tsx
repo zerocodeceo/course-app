@@ -9,11 +9,19 @@ import { AnimatedBackground } from './components/AnimatedBackground'
 import { MainLayout } from './components/MainLayout'
 import { API_URL } from './lib/api'
 
+interface HomePageStats {
+  totalPremiumUsers: number
+  recentPremiumUsers: Array<{
+    profilePicture: string
+    displayName: string
+  }>
+}
+
 export default function Home() {
   const { user } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<HomePageStats>({
     totalPremiumUsers: 0,
     recentPremiumUsers: []
   })
