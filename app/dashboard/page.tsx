@@ -513,7 +513,7 @@ export default function Dashboard() {
                   <Card className="bg-gradient-to-br from-purple-50/90 to-white/90 backdrop-blur-sm">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Total Members
+                        Total Premium Members
                       </CardTitle>
                       <Users className="h-4 w-4 text-purple-600" />
                     </CardHeader>
@@ -522,7 +522,7 @@ export default function Dashboard() {
                         <AnimatedNumber value={stats.totalMembers} />
                       </div>
                       <p className="text-xs text-gray-500">
-                        Premium members
+                        Paid customers
                       </p>
                     </CardContent>
                   </Card>
@@ -547,7 +547,7 @@ export default function Dashboard() {
                   <Card className="bg-gradient-to-br from-blue-50 to-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Total Visitors
+                        Total Members
                       </CardTitle>
                       <Eye className="h-4 w-4 text-blue-600" />
                     </CardHeader>
@@ -556,7 +556,7 @@ export default function Dashboard() {
                         <AnimatedNumber value={stats.totalVisitors} />
                       </div>
                       <p className="text-xs text-gray-500">
-                        Website traffic
+                      Registered users
                       </p>
                     </CardContent>
                   </Card>

@@ -106,7 +106,7 @@ export default function Home() {
                 {statsLoading ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
-                  `${(stats.totalPremiumUsers + 71).toLocaleString()}+ students enrolled`
+                  `${stats.totalPremiumUsers}+ students enrolled`
                 )}
               </span>
             </div>

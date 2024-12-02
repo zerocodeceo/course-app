@@ -4,8 +4,6 @@ import { API_URL } from '../lib/api'
 
 type UserStats = {
   totalPremiumUsers: number
-  totalVisitors: number
-  totalRevenue: number
   recentPremiumUsers: Array<{
     profilePicture: string
     displayName: string
@@ -15,8 +13,6 @@ type UserStats = {
 export function useUserStats() {
   const [stats, setStats] = useState<UserStats>({
     totalPremiumUsers: 0,
-    totalVisitors: 0,
-    totalRevenue: 0,
     recentPremiumUsers: []
   })
   const [loading, setLoading] = useState(true)
