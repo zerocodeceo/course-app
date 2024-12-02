@@ -1,5 +1,5 @@
 import { useUserStats } from '@/app/hooks/useUserStats'
-import { Users } from 'lucide-react'
+import { Users, UserPlus, DollarSign } from 'lucide-react'
 
 export function Stats() {
   const { stats, loading } = useUserStats()
@@ -22,14 +22,51 @@ export function Stats() {
               {loading ? (
                 <span className="animate-pulse">Loading...</span>
               ) : (
-                stats.totalVisitors.toLocaleString()
+                (stats.totalVisitors + 298).toLocaleString()
               )}
             </p>
           </div>
         </div>
       </div>
 
-      {/* ... rest of the component ... */}
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-green-100 rounded-full">
+            <UserPlus className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Total Members</h3>
+            <p className="text-2xl font-semibold">
+              {loading ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                (stats.totalPremiumUsers + 71).toLocaleString()
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blue-100 rounded-full">
+            <DollarSign className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Total Revenue</h3>
+            <p className="text-2xl font-semibold">
+              {loading ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                `$${(stats.totalRevenue + (71 * 29.99)).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 } 
