@@ -1,7 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react'
 import { API_URL } from '../lib/api'
-import { getUserLocation } from '../lib/geolocation'
 
 type User = {
   _id: string
@@ -30,6 +29,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
   const [loading, setLoading] = useState(true)
 
+  const checkAuthStatus = async () => {
+    try {
+      console.log('Starting auth status check')
+      console.log('Current cookies:', document.cookie)
+      
+      const response = await fetch(`${API_URL}/auth/status`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      const data = await response.json()
+      console.log('Auth status full response:', data)
+      
+      if (data.user) {
+        console.log('User authenticated:', data.user.email)
+        setUser(data.user)
+      } else {
+        console.log('No user found in response')
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Detailed auth check error:', error)
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const refreshUser = async () => {
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
@@ -52,59 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const saveUserLocation = async () => {
-    try {
-      console.log('Getting user location...')
-      const location = await getUserLocation()
-      console.log('Location obtained:', location)
-      
-      const response = await fetch(`${API_URL}/auth/location`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(location),
-      })
-      
-      const data = await response.json()
-      console.log('Location save response:', data)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save location: ${data.error}`)
-      }
-    } catch (error) {
-      console.error('Error saving location:', error)
-    }
-  }
-
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch(`${API_URL}/auth/status`, {
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          }
-        })
-        const data = await response.json()
-        
-        if (data.user) {
-          setUser(data.user)
-          await saveUserLocation()
-        } else {
-          setUser(null)
-        }
-      } catch (error) {
-        console.error('Auth check error:', error)
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
+    checkAuthStatus()
   }, [])
 
   return (

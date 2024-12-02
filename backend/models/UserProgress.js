@@ -1,23 +1,15 @@
 const mongoose = require('mongoose')
 
 const userProgressSchema = new mongoose.Schema({
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: true
-    }
+  videoId: {
+    type: String,
+    required: true
   },
-  videoId: String,
   duration: {
     type: Number,
     default: 0
@@ -36,7 +28,7 @@ const userProgressSchema = new mongoose.Schema({
   }
 })
 
-// Remove the compound index since we want multiple entries per user
-userProgressSchema.index({ location: '2dsphere' })
+// Compound index to ensure unique progress entries per user and video
+userProgressSchema.index({ userId: 1, videoId: 1 }, { unique: true })
 
 module.exports = mongoose.model('UserProgress', userProgressSchema) 
