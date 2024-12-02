@@ -11,6 +11,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+const axios = require('axios')
 
 const app = express()
 app.set('trust proxy', 1)
@@ -613,6 +614,30 @@ app.post('/admin/add-videos', async (req, res) => {
   } catch (error) {
     console.error('Error adding new videos:', error)
     res.status(500).json({ error: 'Failed to add new videos' })
+  }
+})
+
+app.post('/update-location', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' })
+  }
+
+  try {
+    const { coordinates } = req.body
+    
+    // Update user's location in database with just coordinates
+    await User.findByIdAndUpdate(req.user._id, {
+      location: {
+        coordinates: {
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
+        }
+      }
+    })
+
+    res.json({ success: true })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update location' })
   }
 })
 

@@ -9,6 +9,12 @@ type User = {
   email: string
   profilePicture: string
   plan: 'basic' | 'premium'
+  location?: {
+    coordinates?: {
+      latitude: number
+      longitude: number
+    }
+  }
   purchaseDate?: string
   createdAt: string
 } | null

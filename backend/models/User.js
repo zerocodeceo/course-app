@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema({
     enum: ['basic', 'premium'],
     default: 'basic'
   },
+  location: {
+    coordinates: {
+      latitude: Number,
+      longitude: Number
+    }
+  },
   purchaseDate: {
     type: Date
   },

@@ -7,6 +7,7 @@ import { ToastContainer } from './components/Toast'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import JsonLdSchema from './components/JsonLdSchema'
 import CookieConsent from './components/CookieConsent'
+import { LocationPermission } from './components/LocationPermission'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -105,6 +106,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <GoogleAnalytics />
         <AuthProvider>
+          <LocationPermission />
           <JsonLdSchema />
           {children}
           <ToastContainer />
