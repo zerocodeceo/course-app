@@ -27,48 +27,37 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
   try {
     if (!endpointSecret) {
-      console.error('Webhook secret is not configured')
       return res.status(400).send('Webhook secret not configured')
     }
 
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
-    console.log('Webhook received:', event.type)
 
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object
-        console.log('Payment successful for session:', session.id)
         
         try {
           const userId = session.metadata.userId
           if (!userId) {
-            console.error('No userId in session metadata')
             return res.status(400).send('No userId in session metadata')
           }
 
           const user = await User.findById(userId)
           if (!user) {
-            console.error('User not found:', userId)
             return res.status(404).send('User not found')
           }
 
           user.plan = 'premium'
           user.purchaseDate = new Date()
           await user.save()
-          console.log('User upgraded to premium:', userId)
         } catch (error) {
-          console.error('Error updating user:', error)
           return res.status(500).send('Error updating user')
         }
         break
-
-      default:
-        console.log(`Unhandled event type ${event.type}`)
     }
 
     res.json({ received: true })
   } catch (err) {
-    console.error('Webhook error:', err.message)
     return res.status(400).send(`Webhook Error: ${err.message}`)
   }
 })
@@ -105,11 +94,6 @@ app.use(session({
     path: '/'
   }
 }))
-
-app.use((req, res, next) => {
-  console.log('Incoming request cookies:', req.headers.cookie)
-  next()
-})
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -157,13 +141,6 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  (req, res, next) => {
-    console.log('Auth request received:')
-    console.log('Headers:', req.headers)
-    console.log('User Agent:', req.headers['user-agent'])
-    console.log('Platform:', req.headers['sec-ch-ua-platform'])
-    next()
-  },
   passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
@@ -175,23 +152,13 @@ app.get('/auth/google/callback',
   function(req, res) {
     req.login(req.user, (err) => {
       if (err) {
-        console.error('Login error:', err)
         return res.redirect(`${process.env.CLIENT_URL}/login`)
       }
 
       req.session.save((err) => {
         if (err) {
-          console.error('Session save error:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-
-        console.log('\n=== Auth Callback ===')
-        console.log('Session ID:', req.sessionID)
-        console.log('Session:', req.session)
-        console.log('Auth status:', req.isAuthenticated())
-        console.log('User:', req.user)
-        console.log('=====================\n')
-
         res.redirect(process.env.CLIENT_URL)
       })
     })
@@ -199,15 +166,6 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', (req, res) => {
-  console.log('\n=== Auth Status Check ===')
-  console.log('Session ID:', req.sessionID)
-  console.log('Session:', req.session)
-  console.log('Auth status:', req.isAuthenticated())
-  console.log('User:', req.user)
-  console.log('Headers:', req.headers)
-  console.log('Cookies:', req.headers.cookie)
-  console.log('=====================\n')
-  
   res.json({
     user: req.isAuthenticated() ? req.user : null,
     sessionId: req.sessionID,

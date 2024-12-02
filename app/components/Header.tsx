@@ -40,11 +40,6 @@ export function Header() {
   }
 
   const handleLogin = () => {
-    console.log('Starting login process...')
-    console.log('Current URL:', window.location.href)
-    console.log('API URL:', API_URL)
-    console.log('User Agent:', window.navigator.userAgent)
-    
     window.location.replace(`${API_URL}/auth/google`)
   }
 
