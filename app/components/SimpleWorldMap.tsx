@@ -8,6 +8,7 @@ type SimpleWorldMapProps = {
   markers: Array<{
     lat: number
     lng: number
+    size: number
   }>
 }
 
@@ -31,10 +32,6 @@ export default function SimpleWorldMap({ markers }: SimpleWorldMapProps) {
         }}
         width={800}
         height={400}
-        style={{
-          width: "100%",
-          height: "100%"
-        }}
       >
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
@@ -69,9 +66,15 @@ export default function SimpleWorldMap({ markers }: SimpleWorldMapProps) {
             ))
           }
         </Geographies>
-        {markers.map(({ lat, lng }, index) => (
+        {markers.map(({ lat, lng, size }, index) => (
           <Marker key={index} coordinates={[lng, lat]}>
-            <circle r={4} fill="#22c55e" stroke="white" strokeWidth={2} />
+            <circle 
+              r={size} 
+              fill="#22c55e" 
+              stroke="white" 
+              strokeWidth={2}
+              opacity={0.8}
+            />
           </Marker>
         ))}
       </ComposableMap>

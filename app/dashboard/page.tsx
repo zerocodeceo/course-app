@@ -52,6 +52,7 @@ type Statistics = {
   visitorLocations: Array<{
     lat: number
     lng: number
+    size: number
   }>
 }
 
