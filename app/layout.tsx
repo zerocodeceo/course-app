@@ -103,8 +103,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon-96x96.png" />
       </head>
       <body suppressHydrationWarning>
+        <GoogleAnalytics />
         <AuthProvider>
-          <GoogleAnalytics />
           <JsonLdSchema />
           {children}
           <ToastContainer />
