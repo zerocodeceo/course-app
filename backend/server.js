@@ -254,18 +254,30 @@ app.post('/verify-payment', async (req, res) => {
 
 app.get('/user-stats', async (req, res) => {
   try {
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
-    const recentPremiumUsers = await User.find({ plan: 'premium' })
-      .sort({ purchaseDate: -1 })
-      .limit(5)
-      .select('profilePicture displayName -_id')
+    const premiumUsers = await User.find({ 
+      plan: 'premium',
+      'location.coordinates': { $exists: true }
+    }).sort({ purchaseDate: -1 })
+
+    const recentPremiumUsers = premiumUsers
+      .slice(0, 5)
+      .map(user => ({
+        profilePicture: user.profilePicture,
+        displayName: user.displayName
+      }))
+
+    const visitorLocations = premiumUsers
+      .filter(user => user.location?.coordinates)
+      .map(user => ({
+        coordinates: user.location.coordinates
+      }))
 
     res.json({
-      totalPremiumUsers,
-      recentPremiumUsers
+      totalPremiumUsers: premiumUsers.length,
+      recentPremiumUsers,
+      visitorLocations
     })
   } catch (error) {
-    console.error('Error fetching user stats:', error)
     res.status(500).json({ error: 'Error fetching user stats' })
   }
 })
