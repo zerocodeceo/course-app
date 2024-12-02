@@ -3,30 +3,34 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../lib/api'
 
 type UserStats = {
-  totalPremiumUsers: number
-  recentPremiumUsers: Array<{
-    profilePicture: string
-    displayName: string
+  totalMembers: number
+  totalRevenue: number
+  visitorLocations: Array<{
+    coordinates: {
+      latitude: number
+      longitude: number
+    }
   }>
 }
 
 export function useUserStats() {
   const [stats, setStats] = useState<UserStats>({
-    totalPremiumUsers: 0,
-    recentPremiumUsers: []
+    totalMembers: 0,
+    totalRevenue: 0,
+    visitorLocations: []
   })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/user-stats`, {
+        const response = await fetch(`${API_URL}/dashboard-stats`, {
           credentials: 'include'
         })
         const data = await response.json()
         setStats(data)
       } catch (error) {
-        console.error('Error fetching user stats:', error)
+        // Silent fail in production
       } finally {
         setLoading(false)
       }

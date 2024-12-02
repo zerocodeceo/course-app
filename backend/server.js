@@ -11,7 +11,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
-const axios = require('axios')
 
 const app = express()
 app.set('trust proxy', 1)
@@ -277,95 +276,25 @@ app.get('/dashboard-stats', async (req, res) => {
   }
 
   try {
-    // Get all premium users sorted by purchase date
+    // Get all premium users
     const premiumUsers = await User.find({ plan: 'premium' })
-      .sort({ purchaseDate: 1 })
-
-    const totalSubscribers = premiumUsers.length
-    const totalRevenue = totalSubscribers * 29.99
-
-    // Define major cities across regions
-    const majorCities = [
-      // United States
-      { city: 'New York', lat: 40.7128, lng: -74.0060 },
-      { city: 'Los Angeles', lat: 34.0522, lng: -118.2437 },
-      { city: 'Chicago', lat: 41.8781, lng: -87.6298 },
-      { city: 'Miami', lat: 25.7617, lng: -80.1918 },
-      { city: 'San Francisco', lat: 37.7749, lng: -122.4194 },
-      
-      // Canada
-      { city: 'Toronto', lat: 43.6532, lng: -79.3832 },
-      { city: 'Vancouver', lat: 49.2827, lng: -123.1207 },
-      { city: 'Montreal', lat: 45.5017, lng: -73.5673 },
-      
-      // Brazil
-      { city: 'São Paulo', lat: -23.5505, lng: -46.6333 },
-      { city: 'Rio de Janeiro', lat: -22.9068, lng: -43.1729 },
-      { city: 'Brasília', lat: -15.7975, lng: -47.8919 },
-      { city: 'Salvador', lat: -12.9714, lng: -38.5014 },
-      
-      // Europe
-      { city: 'London', lat: 51.5074, lng: -0.1278 },
-      { city: 'Paris', lat: 48.8566, lng: 2.3522 },
-      { city: 'Berlin', lat: 52.5200, lng: 13.4050 },
-      { city: 'Rome', lat: 41.9028, lng: 12.4964 },
-      { city: 'Madrid', lat: 40.4168, lng: -3.7038 },
-      { city: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
-      { city: 'Barcelona', lat: 41.3851, lng: 2.1734 },
-      { city: 'Lisbon', lat: 38.7223, lng: -9.1393 }
-    ]
-
-    // Update the visitorLocations code
-    const visitorLocations = premiumUsers.map(() => {
-      // Get a random city from the array
-      const randomCity = majorCities[Math.floor(Math.random() * majorCities.length)]
-      
-      // Add a tiny random offset to prevent exact overlapping (-0.01 to 0.01)
-      const offset = () => (Math.random() - 0.5) * 0.02
-      
-      return {
-        lat: randomCity.lat + offset(),
-        lng: randomCity.lng + offset(),
-        city: randomCity.city // Optional: if you want to use the city name
-      }
-    })
-
-    // Create growth data based on actual purchase dates
-    const months = Array.from({ length: 12 }, (_, i) => {
-      return new Date(2024, i, 1).toLocaleString('en-US', { month: 'short' })
-    })
-    const now = new Date()
-    const currentMonth = now.getMonth()
     
-    const subscribersByMonth = new Array(currentMonth + 1).fill(0)
-    premiumUsers.forEach(user => {
-      const purchaseMonth = new Date(user.purchaseDate).getMonth()
-      if (purchaseMonth <= currentMonth) {
-        subscribersByMonth[purchaseMonth]++
-      }
-    })
+    const totalMembers = premiumUsers.length
+    const totalRevenue = totalMembers * 29.99
 
-    // Calculate cumulative growth
-    let cumulative = 0
-    const cumulativeGrowth = subscribersByMonth.map(count => {
-      cumulative += count
-      return cumulative
-    })
-
-    const subscriberGrowth = {
-      labels: months.slice(0, currentMonth + 1),
-      data: cumulativeGrowth
-    }
+    // Filter out users without location data and map to required format
+    const visitorLocations = premiumUsers
+      .filter(user => user.location?.coordinates?.latitude && user.location?.coordinates?.longitude)
+      .map(user => ({
+        coordinates: user.location.coordinates
+      }))
 
     res.json({
-      totalMembers: totalSubscribers,
+      totalMembers,
       totalRevenue,
-      totalVisitors: await User.countDocuments(),
-      memberGrowth: subscriberGrowth,
       visitorLocations
     })
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
     res.status(500).json({ error: 'Error fetching dashboard stats' })
   }
 })
