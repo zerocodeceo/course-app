@@ -62,17 +62,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         credentials: 'include',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(location),
       })
       
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Server response:', errorText)
+        throw new Error(`Failed to save location: ${response.status}`)
+      }
+
       const data = await response.json()
       console.log('Location save response:', data)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save location: ${data.error}`)
-      }
     } catch (error) {
       console.error('Error saving location:', error)
     }
