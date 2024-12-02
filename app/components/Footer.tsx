@@ -65,6 +65,10 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} zerocodeceo.com. All rights reserved.
           </p>
+
+          <Link href="/privacy-policy" className="hover:text-purple-600">
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </footer>
