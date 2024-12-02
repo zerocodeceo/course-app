@@ -30,8 +30,7 @@ export function Header() {
       await refreshUser()
       router.replace('/')
     } catch (error) {
-      console.error('Logout error:', error)
-      window.location.href = '/'
+      window.location.href = `${API_URL}/auth/logout`
     }
   }
 
