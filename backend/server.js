@@ -268,7 +268,7 @@ app.get('/user-stats', async (req, res) => {
   try {
     const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
     const recentPremiumUsers = await User.find({ plan: 'premium' })
-      .sort({ lastLogin: -1 })
+      .sort({ createdAt: -1 })
       .limit(5)
       .select('profilePicture displayName -_id')
 
