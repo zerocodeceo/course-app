@@ -16,7 +16,8 @@ export function Stats() {
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!mapContainerRef.current || !data?.visitorLocations?.length) return
+    // Only proceed if we have the container and data
+    if (!mapContainerRef.current || !data) return
 
     // Initialize map only once
     if (!mapRef.current) {
@@ -42,20 +43,22 @@ export function Stats() {
       }
     })
 
-    // Add markers for each premium user location
-    data.visitorLocations.forEach((location: Location) => {
-      const { latitude, longitude } = location.coordinates
-      if (latitude && longitude) {
-        L.marker([latitude, longitude], {
-          icon: L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
-            iconSize: [12, 12],
-            iconAnchor: [6, 6]
-          })
-        }).addTo(mapRef.current!)
-      }
-    })
+    // Add markers only if we have visitor locations
+    if (data.visitorLocations && data.visitorLocations.length > 0) {
+      data.visitorLocations.forEach((location: Location) => {
+        const { latitude, longitude } = location.coordinates
+        if (latitude && longitude) {
+          L.marker([latitude, longitude], {
+            icon: L.divIcon({
+              className: 'custom-div-icon',
+              html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
+              iconSize: [12, 12],
+              iconAnchor: [6, 6]
+            })
+          }).addTo(mapRef.current!)
+        }
+      })
+    }
 
     return () => {
       if (mapRef.current) {
@@ -63,7 +66,7 @@ export function Stats() {
         mapRef.current = null
       }
     }
-  }, [data?.visitorLocations])
+  }, [data])
 
   if (isLoading) {
     return (
@@ -91,13 +94,13 @@ export function Stats() {
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold">Total Members</h3>
           <p className="text-2xl font-bold text-purple-600">
-            {data.totalMembers.toLocaleString()}
+            {(data.totalMembers || 0).toLocaleString()}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold">Total Revenue</h3>
           <p className="text-2xl font-bold text-green-600">
-            ${data.totalRevenue.toLocaleString(undefined, {
+            ${(data.totalRevenue || 0).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}
