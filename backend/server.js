@@ -253,62 +253,6 @@ app.post('/verify-payment', async (req, res) => {
   }
 })
 
-app.get('/user-stats', async (req, res) => {
-  try {
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
-    const recentPremiumUsers = await User.find({ plan: 'premium' })
-      .sort({ purchaseDate: -1 })
-      .limit(5)
-      .select('profilePicture displayName -_id')
-
-    res.json({
-      totalPremiumUsers,
-      recentPremiumUsers
-    })
-  } catch (error) {
-    console.error('Error fetching user stats:', error)
-    res.status(500).json({ error: 'Error fetching user stats' })
-  }
-})
-
-// Add this constant at the top of the file with other constants
-const FIXED_LOCATIONS = [
-  // United States
-  { latitude: 40.7128, longitude: -74.0060 }, // New York
-  { latitude: 34.0522, longitude: -118.2437 }, // Los Angeles
-  { latitude: 41.8781, longitude: -87.6298 }, // Chicago
-  { latitude: 25.7617, longitude: -80.1918 }, // Miami
-  { latitude: 37.7749, longitude: -122.4194 }, // San Francisco
-  
-  // Europe
-  { latitude: 51.5074, longitude: -0.1278 }, // London
-  { latitude: 48.8566, longitude: 2.3522 }, // Paris
-  { latitude: 52.5200, longitude: 13.4050 }, // Berlin
-  { latitude: 41.9028, longitude: 12.4964 }, // Rome
-  { latitude: 40.4168, longitude: -3.7038 }, // Madrid
-  { latitude: 52.3676, longitude: 4.9041 }, // Amsterdam
-  
-  // Latin America
-  { latitude: -23.5505, longitude: -46.6333 }, // São Paulo
-  { latitude: -34.6037, longitude: -58.3816 }, // Buenos Aires
-  { latitude: 19.4326, longitude: -99.1332 }, // Mexico City
-  
-  // Asia
-  { latitude: 35.6762, longitude: 139.6503 }, // Tokyo
-  { latitude: 22.3193, longitude: 114.1694 }, // Hong Kong
-  { latitude: 1.3521, longitude: 103.8198 }, // Singapore
-  { latitude: 37.5665, longitude: 126.9780 }, // Seoul
-  
-  // Australia
-  { latitude: -33.8688, longitude: 151.2093 }, // Sydney
-  { latitude: -37.8136, longitude: 144.9631 }, // Melbourne
-  
-  // Canada
-  { latitude: 43.6532, longitude: -79.3832 }, // Toronto
-  { latitude: 49.2827, longitude: -123.1207 }, // Vancouver
-]
-
-// Update the dashboard-stats endpoint
 app.get('/dashboard-stats', async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -319,70 +263,26 @@ app.get('/dashboard-stats', async (req, res) => {
     const premiumUsers = await User.find({ plan: 'premium' })
       .sort({ purchaseDate: 1 })
 
-    const totalSubscribers = premiumUsers.length
-    const totalRevenue = totalSubscribers * 29.99
+    const totalPremiumUsers = premiumUsers.length
+    const totalRevenue = totalPremiumUsers * 29.99
 
-    // Get real locations from premium users who have shared their location
-    const realLocations = premiumUsers
-      .filter(user => user.location?.coordinates)
-      .map(user => ({
-        latitude: user.location.coordinates.latitude,
-        longitude: user.location.coordinates.longitude
-      }))
+    // Get recent premium users for the homepage
+    const recentPremiumUsers = await User.find({ plan: 'premium' })
+      .sort({ purchaseDate: -1 })
+      .limit(5)
+      .select('profilePicture displayName -_id')
 
-    // Combine real locations with fixed locations
-    // First, add all real locations
-    const visitorLocations = [...realLocations]
-
-    // Then add fixed locations until we reach 22 total locations
-    let fixedLocationsIndex = 0
-    while (visitorLocations.length < 22 && fixedLocationsIndex < FIXED_LOCATIONS.length) {
-      // Check if this fixed location is too close to any existing real location
-      const fixedLocation = FIXED_LOCATIONS[fixedLocationsIndex]
-      const isTooClose = realLocations.some(realLoc => 
-        Math.abs(realLoc.latitude - fixedLocation.latitude) < 1 && 
-        Math.abs(realLoc.longitude - fixedLocation.longitude) < 1
-      )
-
-      if (!isTooClose) {
-        visitorLocations.push(fixedLocation)
-      }
-      fixedLocationsIndex++
-    }
-
-    // Create growth data based on actual purchase dates
-    const months = Array.from({ length: 12 }, (_, i) => {
-      return new Date(2024, i, 1).toLocaleString('en-US', { month: 'short' })
-    })
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    
-    const subscribersByMonth = new Array(currentMonth + 1).fill(0)
-    premiumUsers.forEach(user => {
-      const purchaseMonth = new Date(user.purchaseDate).getMonth()
-      if (purchaseMonth <= currentMonth) {
-        subscribersByMonth[purchaseMonth]++
-      }
-    })
-
-    // Calculate cumulative growth
-    let cumulative = 0
-    const cumulativeGrowth = subscribersByMonth.map(count => {
-      cumulative += count
-      return cumulative
-    })
-
-    const subscriberGrowth = {
-      labels: months.slice(0, currentMonth + 1),
-      data: cumulativeGrowth
-    }
+    // Rest of your existing stats code...
 
     res.json({
-      totalMembers: totalSubscribers,
+      totalMembers: totalPremiumUsers,
       totalRevenue,
       totalVisitors: await User.countDocuments(),
       memberGrowth: subscriberGrowth,
-      visitorLocations
+      visitorLocations,
+      // Add these for the homepage
+      totalPremiumUsers,
+      recentPremiumUsers
     })
   } catch (error) {
     res.status(500).json({ error: 'Error fetching dashboard stats' })

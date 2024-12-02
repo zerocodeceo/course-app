@@ -14,7 +14,7 @@ export function Stats() {
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!mapContainerRef.current || !data) return
+    if (!mapContainerRef.current || !data?.visitorLocations) return
 
     // Initialize map only once
     if (!mapRef.current) {
@@ -24,39 +24,35 @@ export function Stats() {
         minZoom: 2,
         maxZoom: 18,
         zoomControl: true,
-        scrollWheelZoom: true
+        scrollWheelZoom: true,
+        attributionControl: false
       })
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: ''
       }).addTo(mapRef.current)
     }
 
-    // Clear existing markers
-    if (mapRef.current) {
-      mapRef.current.eachLayer((layer) => {
-        if (layer instanceof L.Marker) {
-          layer.remove()
-        }
-      })
-
-      // Add new markers
-      if (data.visitorLocations) {
-        data.visitorLocations.forEach((location: Location) => {
-          if (location.latitude && location.longitude) {
-            const marker = L.marker([location.latitude, location.longitude], {
-              icon: L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div class='marker-pin bg-purple-500'></div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
-              })
-            })
-            marker.addTo(mapRef.current!)
-          }
-        })
+    // Clear and add markers
+    mapRef.current.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+        layer.remove()
       }
-    }
+    })
+
+    // Add markers
+    data.visitorLocations.forEach((location: Location) => {
+      if (location.latitude && location.longitude) {
+        L.marker([location.latitude, location.longitude], {
+          icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+          })
+        }).addTo(mapRef.current!)
+      }
+    })
 
     return () => {
       if (mapRef.current) {
@@ -64,7 +60,7 @@ export function Stats() {
         mapRef.current = null
       }
     }
-  }, [data])
+  }, [data?.visitorLocations])
 
   if (isLoading) return <div>Loading...</div>
   if (!data) return null
