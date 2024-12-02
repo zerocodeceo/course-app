@@ -72,14 +72,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch(`${API_URL}/auth/check`, {
-          credentials: 'include'
+        const response = await fetch(`${API_URL}/auth/status`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
         })
         const data = await response.json()
         
-        if (data.authenticated) {
+        if (data.user) {
           setUser(data.user)
-          // Request and save location after successful auth
           await saveUserLocation()
         } else {
           setUser(null)
