@@ -1,54 +1,47 @@
 import React, { useRef, useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import 'leaflet.markercluster/dist/MarkerCluster.css'
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
-import 'leaflet.markercluster'
 import { useUserStats } from '../hooks/useUserStats'
-
-// Add type definitions
-declare module 'leaflet' {
-  interface MarkerClusterGroupOptions {
-    maxClusterRadius?: number
-    spiderfyOnMaxZoom?: boolean
-    showCoverageOnHover?: boolean
-    iconCreateFunction?: (cluster: MarkerCluster) => L.DivIcon
-  }
-
-  interface MarkerCluster {
-    getChildCount(): number
-  }
-
-  class MarkerClusterGroup extends L.FeatureGroup {
-    addLayer(layer: L.Layer): this
-  }
-
-  function markerClusterGroup(options?: MarkerClusterGroupOptions): MarkerClusterGroup
-}
 
 export function Stats() {
   const { stats: data, loading: isLoading } = useUserStats()
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const markersRef = useRef<L.MarkerClusterGroup | null>(null)
 
-  // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return
+    // Wait for the container and data to be ready
+    if (!mapContainerRef.current || !data.visitorLocations) return
 
-    mapRef.current = L.map(mapContainerRef.current, {
-      center: [20, 0],
-      zoom: 2,
-      minZoom: 2,
-      maxZoom: 18,
-      zoomControl: true,
-      scrollWheelZoom: true,
-      attributionControl: false
+    // Create map if it doesn't exist
+    if (!mapRef.current) {
+      const map = L.map(mapContainerRef.current).setView([20, 0], 2)
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: ''
+      }).addTo(map)
+      
+      mapRef.current = map
+    }
+
+    // Clear existing markers
+    mapRef.current.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+        layer.remove()
+      }
     })
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: ''
-    }).addTo(mapRef.current)
+    // Add new markers
+    data.visitorLocations.forEach(location => {
+      const { latitude, longitude } = location.coordinates
+      
+      // Debug log
+      console.log('Adding marker:', { latitude, longitude })
+
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        L.marker([latitude, longitude]).addTo(mapRef.current!)
+      }
+    })
 
     return () => {
       if (mapRef.current) {
@@ -56,49 +49,6 @@ export function Stats() {
         mapRef.current = null
       }
     }
-  }, [])
-
-  // Handle markers
-  useEffect(() => {
-    if (!mapRef.current || !data.visitorLocations) return
-
-    // Remove existing markers
-    if (markersRef.current) {
-      markersRef.current.remove()
-    }
-
-    // Create new marker cluster group
-    markersRef.current = L.markerClusterGroup({
-      maxClusterRadius: 50,
-      spiderfyOnMaxZoom: false,
-      showCoverageOnHover: false,
-      iconCreateFunction: (cluster) => {
-        const count = cluster.getChildCount()
-        return L.divIcon({
-          html: `<div class="bg-purple-500 text-white rounded-full flex items-center justify-center w-8 h-8 font-bold">${count}</div>`,
-          className: 'custom-marker-cluster',
-          iconSize: L.point(32, 32)
-        })
-      }
-    })
-
-    // Add markers
-    data.visitorLocations.forEach((location) => {
-      const { latitude, longitude } = location.coordinates
-      if (typeof latitude === 'number' && typeof longitude === 'number') {
-        const marker = L.marker([latitude, longitude], {
-          icon: L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div class='w-3 h-3 rounded-full bg-purple-500'></div>`,
-            iconSize: [12, 12],
-            iconAnchor: [6, 6]
-          })
-        })
-        markersRef.current?.addLayer(marker)
-      }
-    })
-
-    mapRef.current.addLayer(markersRef.current)
   }, [data.visitorLocations])
 
   if (isLoading) {

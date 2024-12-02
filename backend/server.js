@@ -304,6 +304,9 @@ app.get('/dashboard-stats', async (req, res) => {
         coordinates: user.location.coordinates
       }))
 
+    // Debug log
+    console.log('Visitor locations:', visitorLocations)
+
     // Calculate subscriber growth based on purchase dates
     const months = Array.from({ length: 12 }, (_, i) => {
       return new Date(2024, i, 1).toLocaleString('en-US', { month: 'short' })
