@@ -5,43 +5,16 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from 'react'
+import { useUserStats } from './hooks/useUserStats'
 import { AnimatedBackground } from './components/AnimatedBackground'
 import { MainLayout } from './components/MainLayout'
 import { API_URL } from './lib/api'
-
-interface HomePageStats {
-  totalPremiumUsers: number
-  recentPremiumUsers: Array<{
-    profilePicture: string
-    displayName: string
-  }>
-}
 
 export default function Home() {
   const { user } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [stats, setStats] = useState<HomePageStats>({
-    totalPremiumUsers: 0,
-    recentPremiumUsers: []
-  })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch(`${API_URL}/user-stats`, {
-          credentials: 'include'
-        })
-        const data = await response.json()
-        setStats(data)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [])
+  const { stats, loading: statsLoading } = useUserStats()
 
   useEffect(() => {
     setMounted(true)
@@ -63,7 +36,7 @@ export default function Home() {
         window.location.href = data.url
       }
     } catch (error) {
-      // Silent fail in production
+      console.error('Error creating checkout session:', error)
     }
   }
 
@@ -86,7 +59,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-            Build a webapp like this you are right now — without typing a single line of code
+          Build a webapp like this you are right now — without typing a single line of code
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
@@ -107,7 +80,7 @@ export default function Home() {
 
           <div className="animate-fade-in animation-delay-400 flex items-center gap-4">
             <div className="flex -space-x-4">
-              {stats.recentPremiumUsers?.map((user, i) => (
+              {stats.recentPremiumUsers.map((user, i) => (
                 <div 
                   key={i}
                   className="relative group"
@@ -130,7 +103,7 @@ export default function Home() {
                 {'★'.repeat(5)}
               </div>
               <span className="text-sm text-gray-600">
-                {loading ? (
+                {statsLoading ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
                   `${stats.totalPremiumUsers}+ students enrolled`
@@ -139,6 +112,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Video Section with improved spacing */}
           <div className="w-full max-w-3xl mt-12 mb-24 animate-fade-in animation-delay-500">
             <div className="relative pt-[56.25%]">
               <iframe

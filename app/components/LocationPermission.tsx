@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { API_URL } from '../lib/api'
 
@@ -30,15 +30,18 @@ export function LocationPermission() {
     }
   }
 
-  const requestLocationPermission = useCallback(() => {
+  const requestLocationPermission = () => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
+        // Success callback
         async (position) => {
           await saveUserLocation(position)
         },
+        // Error callback
         () => {
           // Silent fail in production
         },
+        // Options
         {
           enableHighAccuracy: false,
           timeout: 5000,
@@ -46,13 +49,13 @@ export function LocationPermission() {
         }
       )
     }
-  }, [])
+  }
 
   useEffect(() => {
     if (user) {
       requestLocationPermission()
     }
-  }, [user, requestLocationPermission])
+  }, [user])
 
   return null
 } 

@@ -11,6 +11,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+const axios = require('axios')
 
 const app = express()
 app.set('trust proxy', 1)
@@ -276,22 +277,54 @@ app.get('/dashboard-stats', async (req, res) => {
   }
 
   try {
-    // Get all premium users
-    const premiumUsers = await User.find({ plan: 'premium' })
-    
-    const totalMembers = premiumUsers.length
-    const totalRevenue = totalMembers * 29.99
+    // Get all premium users with their locations
+    const premiumUsers = await User.find({ 
+      plan: 'premium',
+      'location.coordinates': { $exists: true } // Only get users with locations
+    })
 
-    // Filter out users without location data and map to required format
+    const totalSubscribers = premiumUsers.length
+    const totalRevenue = totalSubscribers * 29.99
+
+    // Map real user locations
     const visitorLocations = premiumUsers
-      .filter(user => user.location?.coordinates?.latitude && user.location?.coordinates?.longitude)
+      .filter(user => user.location?.coordinates)
       .map(user => ({
         coordinates: user.location.coordinates
       }))
 
+    // Calculate subscriber growth based on purchase dates
+    const months = Array.from({ length: 12 }, (_, i) => {
+      return new Date(2024, i, 1).toLocaleString('en-US', { month: 'short' })
+    })
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    
+    const subscribersByMonth = new Array(currentMonth + 1).fill(0)
+    premiumUsers.forEach(user => {
+      const purchaseMonth = new Date(user.purchaseDate).getMonth()
+      if (purchaseMonth <= currentMonth) {
+        subscribersByMonth[purchaseMonth]++
+      }
+    })
+
+    // Calculate cumulative growth
+    let cumulative = 0
+    const cumulativeGrowth = subscribersByMonth.map(count => {
+      cumulative += count
+      return cumulative
+    })
+
+    const subscriberGrowth = {
+      labels: months.slice(0, currentMonth + 1),
+      data: cumulativeGrowth
+    }
+
     res.json({
-      totalMembers,
+      totalMembers: totalSubscribers,
       totalRevenue,
+      totalVisitors: await User.countDocuments(),
+      memberGrowth: subscriberGrowth,
       visitorLocations
     })
   } catch (error) {
