@@ -63,7 +63,7 @@ export default function Home() {
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
-          Check out our video below to learn more.
+          If you have $30 and 8 hours, check out our video below to learn more.
           </p>
 
           <div className="animate-fade-in-up animation-delay-300">
