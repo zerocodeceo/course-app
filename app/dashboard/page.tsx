@@ -93,11 +93,6 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    if (!user) {
-      router.push('/')
-      return
-    }
-
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
@@ -289,7 +284,6 @@ export default function Dashboard() {
     if (!user) {
       window.location.href = `${API_URL}/auth/google`
     } else {
-      // Existing upgrade logic
       handleUpgrade()
     }
   }
