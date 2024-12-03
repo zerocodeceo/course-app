@@ -57,8 +57,8 @@ export function Footer() {
 
           <div className="flex items-center gap-2 text-gray-600 mb-6">
             <Mail className="w-4 h-4" />
-            <a href="mailto:contact@zerocodeceo.com" className="hover:text-purple-600 transition-colors">
-              contact@zerocodeceo.com
+            <a href="mailto:zerocodeceo@gmail.com" className="hover:text-purple-600 transition-colors">
+              zerocodeceo@gmail.com
             </a>
           </div>
 
