@@ -59,14 +59,26 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-          Build a Web App with AI in 2 days—without typing a single line of code.
+            Build a Web App with AI in 2 days—without typing a single line of code.
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
-          If you have $30 and 8 hours, check out our video below to learn more.
+            If you have $30 and 8 hours, check out our video below to learn more.
           </p>
 
-          <div className="animate-fade-in-up animation-delay-300">
+          <div className="w-full max-w-3xl mb-8 animate-fade-in animation-delay-300">
+            <div className="relative pt-[56.25%]">
+              <iframe
+                className="absolute top-0 left-0 w-full h-full rounded-xl shadow-lg"
+                src="https://www.youtube.com/embed/m4HZgYcyUVA"
+                title="YouTube video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+
+          <div className="animate-fade-in-up animation-delay-400">
             <Button 
               onClick={!user ? handleLogin : user.plan === 'premium' ? handleDashboard : handleUpgrade}
               className={`px-8 py-6 text-lg mb-8 transition-transform hover:scale-105 active:scale-95 ${
@@ -78,7 +90,7 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="animate-fade-in animation-delay-400 flex items-center gap-4">
+          <div className="animate-fade-in animation-delay-500 flex items-center gap-4 mb-24">
             <div className="flex -space-x-4">
               {stats.recentPremiumUsers.map((user, i) => (
                 <div 
@@ -109,19 +121,6 @@ export default function Home() {
                   `${stats.totalPremiumUsers}+ students enrolled`
                 )}
               </span>
-            </div>
-          </div>
-
-          {/* Video Section with improved spacing */}
-          <div className="w-full max-w-3xl mt-12 mb-24 animate-fade-in animation-delay-500">
-            <div className="relative pt-[56.25%]">
-              <iframe
-                className="absolute top-0 left-0 w-full h-full rounded-xl shadow-lg"
-                src="https://www.youtube.com/embed/m4HZgYcyUVA"
-                title="YouTube video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
             </div>
           </div>
         </main>
