@@ -65,7 +65,7 @@ export default function PrivacyPolicy() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">6. Contact Information</h2>
               <p>For any privacy-related questions or concerns, please contact us at:</p>
-              <p className="mt-2">Email: bbertapeli@gmail.com</p>
+              <p className="mt-2">Email: zerocodeceo@gmail.com</p>
             </section>
 
             <section className="mb-8">
