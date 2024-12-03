@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    gtag: (command: string, action: string, params: object) => void;
+  }
+}
+
 "use client"
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -69,6 +75,16 @@ function SuccessContent() {
 
         await refreshUser()
         setShowConfetti(true)
+        
+        // Add Google Analytics purchase event right after successful verification
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'purchase', {
+            currency: 'USD',
+            transaction_id: session_id,
+            value: 29.99 // Replace with actual purchase value if available
+          });
+        }
+
         setTimeout(() => {
           router.push('/dashboard')
         }, 5000) // Give time to enjoy the confetti
