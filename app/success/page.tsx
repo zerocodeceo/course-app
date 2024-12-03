@@ -78,10 +78,11 @@ function SuccessContent() {
         
         // Add Google Analytics purchase event right after successful verification
         if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'purchase', {
-            currency: 'USD',
-            transaction_id: session_id,
-            value: 29.99 // Replace with actual purchase value if available
+          window.gtag('event', 'conversion', {
+            'send_to': 'G-RGTFQHS7Z2/purchase',  // Replace with your actual conversion ID
+            'value': 29.99,
+            'currency': 'USD',
+            'transaction_id': session_id
           });
         }
 
