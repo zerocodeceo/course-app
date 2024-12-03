@@ -79,9 +79,7 @@ function SuccessContent() {
         // Add Google Analytics purchase event right after successful verification
         if (typeof window !== 'undefined' && window.gtag) {
           window.gtag('event', 'conversion', {
-            'send_to': 'AW-16805898539/purchase',  // Google Ads conversion ID
-            'value': 29.99,
-            'currency': 'USD',
+            'send_to': 'AW-16805898539/fDenCIOzkvIZEKvS1s0-',
             'transaction_id': session_id
           });
         }
