@@ -9,16 +9,9 @@ const faqs = [
   {
     question: "What makes this course unique?",
     answer: `This course isn’t just about using AI to generate code. It teaches you how to create everything you’re using right now—from authentication to payments, design to deployment.  
-
-    The coolest part? You’ll type zero lines of code.  
-    
-    Yeah, I know—you’ve probably seen tons of YouTube videos about using Claude, Cursor, Replit, v0, and the rest to whip up code. But let’s be real: typing “Claude, make a to-do list app” isn’t going to get you anywhere.  
-    
-    This course is different. For $30, I’ll show you how to build **this exact site** from scratch. No fluff, just me on camera going from a screenshot to an actual product. And from someone who actually knows how to get AI to spit out code that works, looks good, and can go live.  
-    
-    You’ll learn how to add things like login systems, payments, and how to deploy your app. The whole thing was built in under two days. The video you watched on the front page? Editing that and setting up Google Ads took longer. Funny times we’re living in.  
-    
-    After 10 hours of content, you’ll actually know how to build a web app that functions—and, more importantly, can make you money. Watching clickbait YouTube videos might be fun for a few minutes. But this? This will teach you how to create something real.`
+    The coolest part? You’ll type zero lines of code.  Yeah, I know—you’ve probably seen tons of YouTube videos about using Claude, Cursor, Replit, v0, and the rest to whip up code. But let’s be real: typing “Claude, make a to-do list app” isn’t going to get you anywhere.  
+    This course is different. For $30, I’ll show you how to build any web app from scratch. No fluff, just me on camera going from a screenshot to an actual product. And from someone who actually knows how to get AI to spit out code that works, looks good, and can go live.  
+    Watching clickbait YouTube videos might be fun for a few minutes. But this? This will teach you how to create something real.`
     },
   {
     question: "Do I need any coding experience to take this course?",
