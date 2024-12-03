@@ -79,7 +79,7 @@ function SuccessContent() {
         // Add Google Analytics purchase event right after successful verification
         if (typeof window !== 'undefined' && window.gtag) {
           window.gtag('event', 'conversion', {
-            'send_to': 'G-RGTFQHS7Z2/purchase',  // Replace with your actual conversion ID
+            'send_to': 'AW-16805898539/purchase',  // Google Ads conversion ID
             'value': 29.99,
             'currency': 'USD',
             'transaction_id': session_id
