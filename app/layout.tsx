@@ -9,6 +9,7 @@ import JsonLdSchema from './components/JsonLdSchema'
 import CookieConsent from './components/CookieConsent'
 import { LocationPermission } from './components/LocationPermission'
 import ErrorBoundary from './components/ErrorBoundary'
+import { Suspense } from 'react'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -106,7 +107,9 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <ErrorBoundary>
-          <GoogleAnalytics />
+          <Suspense fallback={null}>
+            <GoogleAnalytics />
+          </Suspense>
           <AuthProvider>
             <LocationPermission />
             <JsonLdSchema />
