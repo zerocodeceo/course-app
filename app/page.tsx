@@ -59,11 +59,11 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-          I built this web app in 2 days—without typing a single line of code.
+          Build your startup with AI in 2 days—without typing a single line of code.
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
-          If you want to know how, watch the video below.
+          Check out our video below to learn more.
           </p>
 
           <div className="animate-fade-in-up animation-delay-300">

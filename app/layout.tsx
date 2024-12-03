@@ -8,6 +8,7 @@ import GoogleAnalytics from './components/GoogleAnalytics'
 import JsonLdSchema from './components/JsonLdSchema'
 import CookieConsent from './components/CookieConsent'
 import { LocationPermission } from './components/LocationPermission'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -104,14 +105,16 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon-96x96.png" />
       </head>
       <body suppressHydrationWarning>
-        <GoogleAnalytics />
-        <AuthProvider>
-          <LocationPermission />
-          <JsonLdSchema />
-          {children}
-          <ToastContainer />
-          <CookieConsent />
-        </AuthProvider>
+        <ErrorBoundary>
+          <GoogleAnalytics />
+          <AuthProvider>
+            <LocationPermission />
+            <JsonLdSchema />
+            {children}
+            <ToastContainer />
+            <CookieConsent />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
