@@ -93,6 +93,11 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
+    if (!user) {
+      router.push('/')
+      return
+    }
+
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
@@ -277,14 +282,6 @@ export default function Dashboard() {
       })
     } catch (error) {
       console.error('Error updating video progress:', error)
-    }
-  }
-
-  const handleStartNow = () => {
-    if (!user) {
-      window.location.href = `${API_URL}/auth/google`
-    } else {
-      handleUpgrade()
     }
   }
 
@@ -628,12 +625,14 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
-      <Button
-        onClick={handleStartNow}
-        className="bg-purple-600 hover:bg-purple-700"
-      >
-        {!user ? 'Start Now' : 'Upgrade to Premium'}
-      </Button>
+      {user?.email === 'bbertapeli@gmail.com' && (
+        <Button
+          onClick={() => router.push('/success?test=true')}
+          className="bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          Test Success Page
+        </Button>
+      )}
     </MainLayout>
   )
 } 

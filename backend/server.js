@@ -283,6 +283,10 @@ app.get('/user-stats', async (req, res) => {
 })
 
 app.get('/dashboard-stats', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
     // Get all premium users with locations
     const premiumUsers = await User.find({ 
@@ -290,54 +294,67 @@ app.get('/dashboard-stats', async (req, res) => {
       'location.coordinates': { $exists: true } 
     })
 
-    // Group users by location for the map
+    // Group users by location (with small precision to create clusters)
     const locationGroups = premiumUsers.reduce((groups, user) => {
       if (!user.location?.coordinates) return groups
 
+      // Round coordinates to 1 decimal place to group nearby users
       const lat = Math.round(user.location.coordinates.latitude * 10) / 10
       const lng = Math.round(user.location.coordinates.longitude * 10) / 10
       const key = `${lat},${lng}`
 
       if (!groups[key]) {
-        groups[key] = { lat, lng, count: 0 }
+        groups[key] = {
+          lat,
+          lng,
+          count: 0
+        }
       }
       groups[key].count++
       return groups
     }, {})
 
+    // Convert groups to array and adjust marker size based on count
     const visitorLocations = Object.values(locationGroups).map(({ lat, lng, count }) => ({
       lat,
       lng,
-      size: Math.min(Math.max(4, Math.log2(count) * 3), 12)
+      size: Math.min(Math.max(4, Math.log2(count) * 3), 12) // Size between 4-12px based on count
     }))
 
-    const totalUsers = await User.countDocuments()
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
-    const revenue = totalPremiumUsers * 29.99
-
-    // Create basic stats for everyone
-    const baseStats = {
-      totalMembers: totalUsers,
-      totalVisitors: totalUsers,
-      visitorLocations,
-      memberGrowth: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        data: [0, 0, 0, 0, 0, totalPremiumUsers]
+    // Create growth data based on actual purchase dates
+    const months = Array.from({ length: 12 }, (_, i) => {
+      return new Date(2024, i, 1).toLocaleString('en-US', { month: 'short' })
+    })
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    
+    const subscribersByMonth = new Array(currentMonth + 1).fill(0)
+    premiumUsers.forEach(user => {
+      const purchaseMonth = new Date(user.purchaseDate).getMonth()
+      if (purchaseMonth <= currentMonth) {
+        subscribersByMonth[purchaseMonth]++
       }
+    })
+
+    // Calculate cumulative growth
+    let cumulative = 0
+    const cumulativeGrowth = subscribersByMonth.map(count => {
+      cumulative += count
+      return cumulative
+    })
+
+    const subscriberGrowth = {
+      labels: months.slice(0, currentMonth + 1),
+      data: cumulativeGrowth
     }
 
-    // Add sensitive data for admin
-    if (req.user?.email === 'bbertapeli@gmail.com') {
-      res.json({
-        ...baseStats,
-        totalRevenue: revenue
-      })
-    } else {
-      res.json({
-        ...baseStats,
-        totalRevenue: 0
-      })
-    }
+    res.json({
+      totalMembers: premiumUsers.length,
+      totalRevenue: premiumUsers.length * 29.99,
+      totalVisitors: await User.countDocuments(),
+      memberGrowth: subscriberGrowth,
+      visitorLocations
+    })
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     res.status(500).json({ error: 'Error fetching dashboard stats' })
@@ -345,43 +362,114 @@ app.get('/dashboard-stats', async (req, res) => {
 })
 
 app.get('/course-content', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
-    // Define preview content
-    const previewContent = [{
-      id: '1',
-      title: '1. Getting Started with AI Web Development',
-      description: 'Learn the fundamentals of building web applications with AI assistance.',
-      videoUrl: 'https://www.youtube.com/embed/m4HZgYcyUVA',
-      order: 1
-    }]
-
-    // If not logged in or basic user, return preview only
-    if (!req.user || req.user.plan === 'basic') {
-      return res.json(previewContent)
-    }
-
-    // For premium users and admin, return full content
     let content = await CourseContent.find().sort('order')
     
     if (!content.length) {
       // Initialize with default content if none exists
       content = await CourseContent.insertMany([
-        previewContent[0],
+        {
+          id: '1',
+          title: '1. INTRO (TO BE CHANGED)',
+          description: 'Learn how to set up a Next.js project with TypeScript, Tailwind CSS, and shadcn/ui components.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 1
+        },
         {
           id: '2',
-          title: '2. From Design to Code: Building Your Project\'s Foundation',
-          description: 'Learn how to transform a website or SaaS screenshot into a fully functional site.',
+          title: '2. Setting Up Your Development Environment',
+          description: 'Build a professional landing page with animations, responsive design, and modern UI components.',
           videoUrl: 'https://www.youtube.com/embed/your-video-id',
           order: 2
         },
-        // ... add other course content items
+        {
+          id: '3',
+          title: '3. Enabling Google Login for Your Web App',
+          description: 'Learn how to set up Google login for your web app step by step. This video will guide you through obtaining the necessary credentials from the Google Cloud Console and configuring your site to allow users to sign in with their Google accounts, enhancing security and user experience.',
+          videoUrl: 'https://www.youtube.com/embed/ZXckMQe8xMQ',
+          order: 3
+        },
+        {
+          id: '4',
+          title: '4. Installing MongoDB & Saving Google Login Users',
+          description: 'In this video, you will learn how to install MongoDB and set it up for your project. Follow along as we save the first pieces of data—users who log in using Google. This foundational step will prepare your database for managing user information efficiently.',
+          videoUrl: 'https://www.youtube.com/embed/aW1kv-vhkNo',
+          order: 4
+        },
+        {
+          id: '5',
+          title: '5. Integrating Stripe Payments: From Test Mode to Live Transactions',
+          description: 'Discover how to integrate Stripe as your payment gateway, starting from test mode and progressing to live transactions with a real credit card. This video covers the entire process, including setting up Stripe, testing payments, and going live, so you can confidently handle payments in your web app.',
+          videoUrl: 'https://www.youtube.com/embed/ALXuYuj4kEA',
+          order: 5
+        },
+        {
+          id: '6',
+          title: '6. Building the Dashboard with the Course Videos and Statistics',
+          description: 'Learn how to create a dynamic course dashboard that organizes your videos and displays key user statistics! This video walks you through designing and coding the interface, making it easy for users to access content and track their progress.',
+          videoUrl: 'https://www.youtube.com/embed/yuR5oJxgvpI',
+          order: 6
+        },
+        {
+          id: '7',
+          title: '7. Setting Up Admin Controls & Restricting Content for Paid Users',
+          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We’ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
+          videoUrl: 'https://www.youtube.com/embed/wavULz_TSlk',
+          order: 7
+        },
+        {
+          id: '8',
+          title: '8. Analytics & Tracking',
+          description: 'Add user analytics, track visitor locations, and create growth metrics.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 8
+        },
+        {
+          id: '9',
+          title: '9. API Development',
+          description: 'Build robust API endpoints with Express.js and implement proper authentication.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 9
+        },
+        {
+          id: '10',
+          title: '10. Deployment & Optimization',
+          description: 'Learn how to deploy your application and implement production best practices.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 10
+        },
+        {
+          id: '11',
+          title: '11. Handling Errors & Logging',
+          description: 'Learn how to implement proper error handling and logging in your application. We\'ll cover error boundaries in React, backend error middleware, and setting up logging systems to track and debug issues in production.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 11
+        },
+        {
+          id: '12',
+          title: '12. Testing Your Application',
+          description: 'Discover how to write and implement tests for your application. We\'ll cover unit testing with Jest, integration testing with React Testing Library, and end-to-end testing with Cypress to ensure your application works reliably.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 12
+        },
+        {
+          id: '13',
+          title: '13. Advanced Features & Future Updates',
+          description: 'Explore advanced features and upcoming updates for your application. Learn about implementing real-time features, WebSocket integration, and other advanced topics that will take your app to the next level.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 13
+        }
       ])
     }
 
     res.json(content)
   } catch (error) {
     console.error('Error fetching course content:', error)
-    res.status(500).json({ error: 'Error fetching course content' })
+    res.status(500).json([])
   }
 })
 
