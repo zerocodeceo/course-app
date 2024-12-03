@@ -285,6 +285,15 @@ export default function Dashboard() {
     }
   }
 
+  const handleStartNow = () => {
+    if (!user) {
+      window.location.href = `${API_URL}/auth/google`
+    } else {
+      // Existing upgrade logic
+      handleUpgrade()
+    }
+  }
+
   return (
     <MainLayout>
       <AnimatedBackground />
@@ -625,14 +634,12 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
-      {user?.email === 'bbertapeli@gmail.com' && (
-        <Button
-          onClick={() => router.push('/success?test=true')}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          Test Success Page
-        </Button>
-      )}
+      <Button
+        onClick={handleStartNow}
+        className="bg-purple-600 hover:bg-purple-700"
+      >
+        {!user ? 'Start Now' : 'Upgrade to Premium'}
+      </Button>
     </MainLayout>
   )
 } 
