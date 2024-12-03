@@ -50,7 +50,7 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen flex flex-col">
+      <div className="flex flex-col">
         <AnimatedBackground />
         <main className="flex-grow flex flex-col items-center text-center px-4 mt-12">
           <div className="inline-flex items-center gap-2 bg-purple-100 px-4 py-1 rounded-full mb-4 animate-fade-in">
@@ -90,7 +90,7 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="animate-fade-in animation-delay-500 flex items-center gap-4 mb-12">
+          <div className="animate-fade-in animation-delay-500 flex items-center gap-4 mb-8">
             <div className="flex -space-x-4">
               {stats.recentPremiumUsers.map((user, i) => (
                 <div 
