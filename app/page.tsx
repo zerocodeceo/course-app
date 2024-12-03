@@ -52,8 +52,8 @@ export default function Home() {
     <MainLayout>
       <div className="min-h-screen flex flex-col">
         <AnimatedBackground />
-        <main className="flex-grow flex flex-col items-center text-center px-4 mt-20">
-          <div className="inline-flex items-center gap-2 bg-purple-100 px-4 py-1 rounded-full mb-6 animate-fade-in">
+        <main className="flex-grow flex flex-col items-center text-center px-4 mt-12">
+          <div className="inline-flex items-center gap-2 bg-purple-100 px-4 py-1 rounded-full mb-4 animate-fade-in">
             <span className="text-purple-600 text-sm">New</span>
             <span className="text-sm">We&apos;ve made our dashboard with financials and statistics public. Log in and check it out!</span>
           </div>
@@ -90,7 +90,7 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="animate-fade-in animation-delay-500 flex items-center gap-4 mb-24">
+          <div className="animate-fade-in animation-delay-500 flex items-center gap-4 mb-12">
             <div className="flex -space-x-4">
               {stats.recentPremiumUsers.map((user, i) => (
                 <div 
