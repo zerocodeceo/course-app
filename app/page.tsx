@@ -55,7 +55,7 @@ export default function Home() {
         <main className="flex-grow flex flex-col items-center text-center px-4 mt-20">
           <div className="inline-flex items-center gap-2 bg-purple-100 px-4 py-1 rounded-full mb-6 animate-fade-in">
             <span className="text-purple-600 text-sm">New</span>
-            <span className="text-sm">We&apos;ve made our financials and statistics public.</span>
+            <span className="text-sm">We&apos;ve made our dashboard with financials and statistics public. Log in and check it out!</span>
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
