@@ -59,7 +59,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold max-w-3xl mb-4 animate-fade-in-up">
-          Build your startup with AI in 2 days—without typing a single line of code.
+          Build a Web App with AI in 2 days—without typing a single line of code.
           </h1>
           
           <p className="text-gray-600 max-w-xl mb-8 animate-fade-in-up animation-delay-200">
