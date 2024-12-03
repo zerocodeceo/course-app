@@ -76,12 +76,15 @@ function SuccessContent() {
         await refreshUser()
         setShowConfetti(true)
         
-        // Add Google Analytics purchase event right after successful verification
+        // Add Google Ads conversion event exactly as provided
         if (typeof window !== 'undefined' && window.gtag) {
+          console.log('Sending conversion event with session_id:', session_id);
           window.gtag('event', 'conversion', {
             'send_to': 'AW-16805898539/fDenCIOzkvIZEKvS1s0-',
-            'transaction_id': session_id
+            'transaction_id': session_id || ''
           });
+        } else {
+          console.log('Google Ads gtag not found');
         }
 
         setTimeout(() => {
