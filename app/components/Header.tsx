@@ -2,15 +2,11 @@
 import * as React from 'react'
 import { Button } from "@/components/ui/button"
 import Image from 'next/image'
-import { useAuth } from '../context/AuthContext'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { navItems } from './MainLayout'
-import { API_URL } from '../lib/api'
 
 export function Header() {
-  const { user } = useAuth()
   const router = useRouter()
-  const pathname = usePathname()
 
   const handleNavigation = (path: string) => {
     router.push(path)
