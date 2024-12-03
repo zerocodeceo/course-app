@@ -8,54 +8,12 @@ import { navItems } from './MainLayout'
 import { API_URL } from '../lib/api'
 
 export function Header() {
-  const { user, refreshUser } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch(`${API_URL}/auth/logout`, {
-        credentials: 'include',
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Logout failed')
-      }
-
-      await refreshUser()
-      router.replace('/')
-    } catch (error) {
-      window.location.href = `${API_URL}/auth/logout`
-    }
-  }
-
   const handleNavigation = (path: string) => {
-    router.replace(path)
-  }
-
-  const handleLogin = () => {
-    window.location.replace(`${API_URL}/auth/google`)
-  }
-
-  const handleUpgrade = async () => {
-    try {
-      const response = await fetch(`${API_URL}/create-checkout-session`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      const data = await response.json()
-      
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (error) {
-      console.error('Error creating checkout session:', error)
-    }
+    router.push(path)
   }
 
   return (
@@ -91,56 +49,13 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
-        {user ? (
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={pathname === '/dashboard' && user.plan === 'basic' 
-                ? handleUpgrade 
-                : () => handleNavigation('/dashboard')}
-              size="sm"
-              className={`${
-                (pathname === '/dashboard' && user.plan === 'basic')
-                  ? 'bg-purple-600 hover:bg-purple-700'
-                  : 'bg-green-600 hover:bg-green-700'
-              } text-white text-xs whitespace-nowrap px-2 md:px-4`}
-            >
-              {pathname === '/dashboard' && user.plan === 'basic' 
-                ? 'Start Now' 
-                : 'Dashboard'}
-            </Button>
-            <div className="hidden md:flex items-center gap-2">
-              {user.profilePicture && (
-                <Image
-                  src={user.profilePicture}
-                  alt={user.displayName}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              )}
-              <div className="flex flex-col">
-                <span className="whitespace-nowrap">{user.displayName}</span>
-                <span className="text-xs text-gray-500 whitespace-nowrap">
-                  {user.plan === 'basic' ? 'Basic Plan' : 'Premium Plan'}
-                </span>
-              </div>
-            </div>
-            <Button 
-              onClick={handleLogout}
-              variant="ghost"
-              className="text-gray-600 hover:text-gray-900 text-xs px-2 md:px-4"
-            >
-              Logout
-            </Button>
-          </div>
-        ) : (
-          <Button 
-            onClick={handleLogin}
-            className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
-          >
-            Login
-          </Button>
-        )}
+        <Button
+          onClick={() => router.push('/dashboard')}
+          size="sm"
+          className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap px-2 md:px-4"
+        >
+          Dashboard
+        </Button>
       </div>
     </nav>
   )

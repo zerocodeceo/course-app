@@ -1,24 +1,24 @@
 "use client"
 import * as React from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from 'react'
 import { useUserStats } from './hooks/useUserStats'
 import { AnimatedBackground } from './components/AnimatedBackground'
 import { MainLayout } from './components/MainLayout'
-
+import { API_URL } from './lib/api'
 
 export default function Home() {
-
-  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const { stats, loading: statsLoading } = useUserStats()
+
+  const handleStartBuilding = () => {
+    window.location.href = `${API_URL}/auth/google`
+  }
 
   useEffect(() => {
     setMounted(true)
   }, [])
-
 
   if (!mounted) {
     return null
@@ -87,10 +87,10 @@ export default function Home() {
 
           <div className="animate-fade-in-up animation-delay-500">
             <Button 
-              onClick={() => router.push('/dashboard')}
-              className="px-8 py-6 text-lg mb-8 transition-transform hover:scale-105 active:scale-95 bg-green-600 hover:bg-green-700"
+              onClick={handleStartBuilding}
+              className="px-8 py-6 text-lg mb-8 transition-transform hover:scale-105 active:scale-95 bg-purple-600 hover:bg-purple-700"
             >
-              Access Dashboard
+              Start Building Your App Today
             </Button>
           </div>
         </main>
