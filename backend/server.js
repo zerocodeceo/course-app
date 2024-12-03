@@ -284,30 +284,58 @@ app.get('/user-stats', async (req, res) => {
 
 app.get('/dashboard-stats', async (req, res) => {
   try {
-    // Public stats that everyone can see
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
-    const totalUsers = await User.countDocuments()
-    const visitorLocations = await User.aggregate([
-      // ... existing location aggregation ...
-    ])
+    // Get all premium users with locations
+    const premiumUsers = await User.find({ 
+      plan: 'premium',
+      'location.coordinates': { $exists: true } 
+    })
 
-    // Only send sensitive data if user is logged in
-    if (req.user) {
+    // Group users by location for the map
+    const locationGroups = premiumUsers.reduce((groups, user) => {
+      if (!user.location?.coordinates) return groups
+
+      const lat = Math.round(user.location.coordinates.latitude * 10) / 10
+      const lng = Math.round(user.location.coordinates.longitude * 10) / 10
+      const key = `${lat},${lng}`
+
+      if (!groups[key]) {
+        groups[key] = { lat, lng, count: 0 }
+      }
+      groups[key].count++
+      return groups
+    }, {})
+
+    const visitorLocations = Object.values(locationGroups).map(({ lat, lng, count }) => ({
+      lat,
+      lng,
+      size: Math.min(Math.max(4, Math.log2(count) * 3), 12)
+    }))
+
+    const totalUsers = await User.countDocuments()
+    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
+    const revenue = totalPremiumUsers * 29.99
+
+    // Create basic stats for everyone
+    const baseStats = {
+      totalMembers: totalUsers,
+      totalVisitors: totalUsers,
+      visitorLocations,
+      memberGrowth: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        data: [0, 0, 0, 0, 0, totalPremiumUsers]
+      }
+    }
+
+    // Add sensitive data for admin
+    if (req.user?.email === 'bbertapeli@gmail.com') {
       res.json({
-        totalMembers: totalUsers,
-        totalRevenue: req.user.email === 'bbertapeli@gmail.com' ? /* admin revenue */ : 0,
-        totalVisitors: totalUsers,
-        memberGrowth: /* growth data */,
-        visitorLocations
+        ...baseStats,
+        totalRevenue: revenue
       })
     } else {
-      // Public version of stats
       res.json({
-        totalMembers: totalUsers,
-        totalRevenue: 0,
-        totalVisitors: totalUsers,
-        memberGrowth: { labels: [], data: [] },
-        visitorLocations
+        ...baseStats,
+        totalRevenue: 0
       })
     }
   } catch (error) {
@@ -318,25 +346,39 @@ app.get('/dashboard-stats', async (req, res) => {
 
 app.get('/course-content', async (req, res) => {
   try {
-    // Always return the first video/module for preview
-    const previewContent = [
-      {
-        id: "1",
-        title: "Getting Started with AI Web Development",
-        description: "Learn the fundamentals of building web applications with AI assistance...",
-        videoUrl: "your-preview-video-url"
-      }
-    ]
+    // Define preview content
+    const previewContent = [{
+      id: '1',
+      title: '1. Getting Started with AI Web Development',
+      description: 'Learn the fundamentals of building web applications with AI assistance.',
+      videoUrl: 'https://www.youtube.com/embed/m4HZgYcyUVA',
+      order: 1
+    }]
 
-    // If user is logged in and premium, return full content
-    if (req.user?.plan === 'premium') {
-      // Return full course content
-      const fullContent = /* your full course content */
-      res.json(fullContent)
-    } else {
-      // Return preview content only
-      res.json(previewContent)
+    // If not logged in or basic user, return preview only
+    if (!req.user || req.user.plan === 'basic') {
+      return res.json(previewContent)
     }
+
+    // For premium users and admin, return full content
+    let content = await CourseContent.find().sort('order')
+    
+    if (!content.length) {
+      // Initialize with default content if none exists
+      content = await CourseContent.insertMany([
+        previewContent[0],
+        {
+          id: '2',
+          title: '2. From Design to Code: Building Your Project\'s Foundation',
+          description: 'Learn how to transform a website or SaaS screenshot into a fully functional site.',
+          videoUrl: 'https://www.youtube.com/embed/your-video-id',
+          order: 2
+        },
+        // ... add other course content items
+      ])
+    }
+
+    res.json(content)
   } catch (error) {
     console.error('Error fetching course content:', error)
     res.status(500).json({ error: 'Error fetching course content' })
