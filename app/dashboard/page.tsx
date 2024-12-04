@@ -554,7 +554,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        <AnimatedNumber value={stats.totalVisitors + 10} />
+                        <AnimatedNumber value={stats.totalVisitors + 30} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
