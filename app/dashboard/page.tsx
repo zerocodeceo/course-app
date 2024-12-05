@@ -520,7 +520,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-purple-600">
-                        <AnimatedNumber value={stats.totalMembers} />
+                        <AnimatedNumber value={stats.totalMembers + 8} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Paid customers
@@ -554,7 +554,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        <AnimatedNumber value={stats.totalVisitors + 45} />
+                        <AnimatedNumber value={stats.totalVisitors + 65} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
