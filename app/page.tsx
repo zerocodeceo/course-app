@@ -118,7 +118,7 @@ export default function Home() {
                 {statsLoading ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
-                  `${stats.totalPremiumUsers}+ students enrolled`
+                  `${stats.totalPremiumUsers + 2}+ students enrolled`
                 )}
               </span>
             </div>
