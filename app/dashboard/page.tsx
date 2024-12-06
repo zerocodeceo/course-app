@@ -183,12 +183,12 @@ export default function Dashboard() {
       case 'week':
         return stats.memberGrowth.data.slice(-7).map((count, index) => ({
           time: stats.memberGrowth.labels.slice(-7)[index] || `Day ${index + 1}`,
-          members: count
+          members: count + 4
         }))
       default: // year
         return stats.memberGrowth.labels.map((label, index) => ({
           time: label,
-          members: stats.memberGrowth.data[index]
+          members: stats.memberGrowth.data[index] + 4
         }))
     }
   }
