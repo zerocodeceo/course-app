@@ -23,13 +23,13 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ZeroCodeCEO | Learn to Build Web Apps & Startups with AI, No Coding Required",
-  description: "Build Apps Without Writing a Single Line of Code. Learn how to create websites, web apps, startups, and SaaS products using AI and no-code tools. Start for just $29.99.",
-  keywords: "no code, web development, startup builder, SaaS development, AI tools, zero code, web app creation, no-code tutorials, startup development",
+  title: "ZeroCodeCEO | Learn to Build Web Apps & Startups with AI, Typing zero lines of code",
+  description: "For just $29.99 I will show you how to build a web app from scratch, without writing a single line of code.",
+  keywords: "no code, web development, claudeai, cursor ai, startup builder, SaaS development, AI tools, zero code, web app creation, no-code tutorials, startup development",
   metadataBase: new URL('https://zerocodeceo.com'),
   openGraph: {
-    title: 'ZeroCodeCEO | Build Web Apps & Startups with AI',
-    description: 'Create professional web applications and startups without coding. Learn step-by-step with real projects.',
+    title: 'ZeroCodeCEO | From Screenshots to a WebApp in 2 days',
+    description: 'Learn how to ACTUALLY use AI to build web apps without writing a single line of code.',
     type: 'website',
     url: 'https://zerocodeceo.com',
     siteName: 'ZeroCodeCEO',
@@ -45,8 +45,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@ZeroCodeCEO',
     creator: '@BrunoBertapeli',
-    title: 'ZeroCodeCEO | No-Code Web App Builder',
-    description: 'Build your next startup without coding. Learn from real projects.',
+    title: 'ZeroCodeCEO | From a screenshot to a WebApp in 2 days',
+    description: 'Learn how to ACTUALLY use AI to build web apps without writing a single line of code.',
     images: ['/og-image.png'], // Same image as OG
   },
   robots: {

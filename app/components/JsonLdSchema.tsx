@@ -6,8 +6,8 @@ export default function JsonLdSchema() {
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "Course",
-    "name": "Zero Code CEO: Build Websites, Startups & SaaS Without Coding",
-    "description": "Learn how to create websites, web apps, startups, and SaaS products from scratch without writing a single line of code. Watch live, step-by-step tutorials with real projects.",
+    "name": "Zero Code CEO: From a screenshot to a WebApp in 2 days",
+    "description": "With just $29.99 I will show you how to build a web app from scratch, without writing a single line of code.",
     "provider": {
       "@type": "Organization",
       "name": "Zero Code CEO",
@@ -22,7 +22,7 @@ export default function JsonLdSchema() {
     "educationalCredentialAwarded": "Certificate of Completion",
     "hasCourseInstance": {
       "@type": "CourseInstance",
-      "name": "Zero Code CEO: No-Code Mastery",
+      "name": "Zero Code CEO: From a screenshot to a WebApp in 2 days",
       "courseMode": "online",
       "instructor": {
         "@type": "Person",
