@@ -188,7 +188,7 @@ export default function Dashboard() {
       default: // year
         return stats.memberGrowth.labels.map((label, index) => ({
           time: label,
-          members: stats.memberGrowth.data[index] + 4
+          members: stats.memberGrowth.data[index]
         }))
     }
   }
