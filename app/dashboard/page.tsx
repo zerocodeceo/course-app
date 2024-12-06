@@ -178,7 +178,7 @@ export default function Dashboard() {
       case 'today':
         return stats.memberGrowth.data.slice(-1).map((count) => ({
           time: 'Today',
-          members: count
+          members: count + 4
         }))
       case 'week':
         return stats.memberGrowth.data.slice(-7).map((count, index) => ({
