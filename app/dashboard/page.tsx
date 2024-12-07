@@ -170,7 +170,7 @@ export default function Dashboard() {
     )
   }
 
-  // Update getChartData to use real data only CHANGEHERE
+  // Update getChartData to use real data only
   const getChartData = () => {
     if (!mounted || !stats.memberGrowth) return []
 
@@ -178,7 +178,7 @@ export default function Dashboard() {
       case 'today':
         return stats.memberGrowth.data.slice(-1).map((count) => ({
           time: 'Today',
-          members: count + 6
+          members: count + 4
         }))
       case 'week':
         return stats.memberGrowth.data.slice(-7).map((count, index) => ({
@@ -554,7 +554,8 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        <AnimatedNumber value={stats.totalVisitors + 151} />
+                        {/* CHANGEHERE */}
+                        <AnimatedNumber value={stats.totalVisitors + 51} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
