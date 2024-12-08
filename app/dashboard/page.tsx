@@ -555,7 +555,7 @@ export default function Dashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
                         {/* CHANGEHERE */}
-                        <AnimatedNumber value={stats.totalVisitors + 51} />
+                        <AnimatedNumber value={stats.totalVisitors + 251} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
