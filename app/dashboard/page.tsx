@@ -18,6 +18,7 @@ import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
+import { calculateAdditionalUsers } from '../lib/statsCalculator'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -105,6 +106,12 @@ export default function Dashboard() {
           credentials: 'include'
         })
         const data = await response.json()
+        
+        // Add the calculated additional users
+        const additionalUsers = calculateAdditionalUsers()
+        data.totalMembers += additionalUsers
+        data.totalVisitors = data.totalVisitors + 444 + additionalUsers // Start from 444 and add daily increases
+
         setStats(data)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -554,8 +561,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        {/* CHANGEHERE */}
-                        <AnimatedNumber value={stats.totalVisitors + 251} />
+                        <AnimatedNumber value={stats.totalVisitors + 444 + calculateAdditionalUsers()} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
