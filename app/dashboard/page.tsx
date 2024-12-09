@@ -107,11 +107,13 @@ export default function Dashboard() {
         })
         const data = await response.json()
         
-        // Use the calculated total (which includes the base number)
-        data.totalMembers = calculateAdditionalUsers()
-        data.totalVisitors = 444 + calculateAdditionalUsers() // Start from 444 plus the calculated total
-
-        setStats(data)
+        // Override the values with our calculations
+        const calculatedUsers = calculateAdditionalUsers()
+        setStats({
+          ...data,
+          totalMembers: calculatedUsers,
+          totalVisitors: 501 + calculatedUsers
+        })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       }
@@ -526,7 +528,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-purple-600">
-                        <AnimatedNumber value={stats.totalMembers} />
+                        <AnimatedNumber value={calculateAdditionalUsers()} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Paid customers
@@ -560,7 +562,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        <AnimatedNumber value={stats.totalVisitors + 444 + calculateAdditionalUsers()} />
+                        <AnimatedNumber value={501 + calculateAdditionalUsers()} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users

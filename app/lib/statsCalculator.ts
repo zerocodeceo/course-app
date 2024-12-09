@@ -1,5 +1,5 @@
 // Launch date of your platform
-export const LAUNCH_DATE = new Date('2024-02-01') // Adjust this to your actual launch date
+export const LAUNCH_DATE = new Date('2024-03-15') // Let's try an even more recent date
 export const BASE_PREMIUM_USERS = 71 // Base number of premium users
 
 export function calculateAdditionalUsers(): number {
