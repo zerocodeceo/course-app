@@ -587,7 +587,7 @@ export default function Dashboard() {
                             Growth
                           </CardTitle>
                           <CardDescription>
-                            Member growth over time
+                            Students growth over time
                           </CardDescription>
                         </div>
                         <Select 

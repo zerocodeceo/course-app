@@ -36,21 +36,22 @@ export const calculateStats = (baseStats: {
   
   // Store daily member counts for the chart
   const dailyGrowth: ChartDataPoint[] = [];
-  let runningMemberCount = baseStats.totalMembers;
   
-  // Calculate last 30 days of growth for the chart
+  // For the chart, start from a lower number and grow linearly
+  const initialMembers = 5; // Start with 5 members
   const daysToShow = 30;
   const startDay = Math.max(1, daysPassed - daysToShow);
   
+  // Calculate total growth for real stats
   for (let day = 1; day <= daysPassed; day++) {
     const dailyVisitors = getRandomForDate(3, 13, day);
     const dailyMembers = getRandomForDate(1, 3, day);
-    
     additionalVisitors += dailyVisitors;
     additionalMembers += dailyMembers;
-    runningMemberCount += dailyMembers;
-    
-    // Only store the last 30 days for the chart
+  }
+
+  // Generate chart data separately with linear growth
+  for (let day = 1; day <= daysPassed; day++) {
     if (day > startDay) {
       const date = new Date('2024-11-25');
       date.setDate(date.getDate() + day - 1);
@@ -59,9 +60,15 @@ export const calculateStats = (baseStats: {
         day: 'numeric' 
       });
       
+      // Calculate a smooth progression from initial members to total members
+      const progress = (day - 1) / daysPassed;
+      const currentMembers = Math.round(
+        initialMembers + (baseStats.totalMembers + additionalMembers - initialMembers) * progress
+      );
+      
       dailyGrowth.push({
         time: formattedDate,
-        members: runningMemberCount
+        members: currentMembers
       });
     }
   }
