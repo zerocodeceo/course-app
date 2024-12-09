@@ -27,8 +27,8 @@ export const calculateStats = (baseStats: {
   
   // Calculate cumulative increases for each day
   for (let day = 1; day <= daysPassed; day++) {
-    additionalVisitors += getRandomForDate(8, 19, day);
-    additionalMembers += getRandomForDate(2, 5, day);
+    additionalVisitors += getRandomForDate(3, 13, day);
+    additionalMembers += getRandomForDate(1, 3, day);
   }
 
   const baseVisitors = baseStats.totalVisitors + 251;
