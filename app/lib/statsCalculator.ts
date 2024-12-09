@@ -14,10 +14,19 @@ const getRandomForDate = (min: number, max: number, seed: number) => {
   return Math.floor(random * (max - min + 1)) + min;
 };
 
+type ChartDataPoint = {
+  time: string;
+  members: number;
+}
+
 export const calculateStats = (baseStats: {
   totalVisitors: number;
   totalMembers: number;
   totalRevenue: number;
+  memberGrowth?: {
+    labels: string[];
+    data: number[];
+  };
 }) => {
   const daysPassed = getDaysPassed();
   
@@ -25,10 +34,36 @@ export const calculateStats = (baseStats: {
   let additionalVisitors = 0;
   let additionalMembers = 0;
   
-  // Calculate cumulative increases for each day
+  // Store daily member counts for the chart
+  const dailyGrowth: ChartDataPoint[] = [];
+  let runningMemberCount = baseStats.totalMembers;
+  
+  // Calculate last 30 days of growth for the chart
+  const daysToShow = 30;
+  const startDay = Math.max(1, daysPassed - daysToShow);
+  
   for (let day = 1; day <= daysPassed; day++) {
-    additionalVisitors += getRandomForDate(3, 13, day);
-    additionalMembers += getRandomForDate(1, 3, day);
+    const dailyVisitors = getRandomForDate(3, 13, day);
+    const dailyMembers = getRandomForDate(1, 3, day);
+    
+    additionalVisitors += dailyVisitors;
+    additionalMembers += dailyMembers;
+    runningMemberCount += dailyMembers;
+    
+    // Only store the last 30 days for the chart
+    if (day > startDay) {
+      const date = new Date('2024-11-25');
+      date.setDate(date.getDate() + day - 1);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      dailyGrowth.push({
+        time: formattedDate,
+        members: runningMemberCount
+      });
+    }
   }
 
   const baseVisitors = baseStats.totalVisitors + 251;
@@ -39,6 +74,7 @@ export const calculateStats = (baseStats: {
   return {
     totalVisitors,
     totalMembers,
-    totalRevenue: Math.round(totalRevenue * 100) / 100
+    totalRevenue: Math.round(totalRevenue * 100) / 100,
+    chartData: dailyGrowth
   };
 }; 

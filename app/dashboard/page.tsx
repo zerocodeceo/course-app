@@ -173,26 +173,17 @@ export default function Dashboard() {
     )
   }
 
-  // Update getChartData to use real data only
+  // Update getChartData to use calculated stats
   const getChartData = () => {
-    if (!mounted || !stats.memberGrowth) return []
+    if (!mounted || !calculatedStats.chartData) return []
 
     switch (timeframe) {
       case 'today':
-        return stats.memberGrowth.data.slice(-1).map((count) => ({
-          time: 'Today',
-          members: count + 4
-        }))
+        return calculatedStats.chartData.slice(-1)
       case 'week':
-        return stats.memberGrowth.data.slice(-7).map((count, index) => ({
-          time: stats.memberGrowth.labels.slice(-7)[index] || `Day ${index + 1}`,
-          members: count + 6
-        }))
+        return calculatedStats.chartData.slice(-7)
       default: // year
-        return stats.memberGrowth.labels.map((label, index) => ({
-          time: label,
-          members: stats.memberGrowth.data[index]
-        }))
+        return calculatedStats.chartData
     }
   }
 
