@@ -1,6 +1,6 @@
 // Launch date of your platform
 export const LAUNCH_DATE = new Date('2024-11-25')
-export const BASE_PREMIUM_USERS = 9 // Starting number
+export const BASE_PREMIUM_USERS = 71 // Starting number
 export const MAX_PREMIUM_USERS = 75 // Max number
 export const PRICE_PER_USER = 29.90 // Price per premium user
 
