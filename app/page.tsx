@@ -9,12 +9,22 @@ import { useUserStats } from './hooks/useUserStats'
 import { AnimatedBackground } from './components/AnimatedBackground'
 import { MainLayout } from './components/MainLayout'
 import { API_URL } from './lib/api'
+import { calculateStats } from './lib/statsCalculator'
 
 export default function Home() {
   const { user } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const { stats, loading: statsLoading } = useUserStats()
+  const calculatedStats = calculateStats({
+    totalVisitors: stats.totalPremiumUsers || 0,
+    totalMembers: stats.totalPremiumUsers || 0,
+    totalRevenue: 0,
+    memberGrowth: {
+      labels: [],
+      data: []
+    }
+  });
 
   useEffect(() => {
     setMounted(true)
@@ -118,7 +128,7 @@ export default function Home() {
                 {statsLoading ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
-                  `${stats.totalPremiumUsers - 2}+ students enrolled`
+                  `${calculatedStats.totalMembers}+ students enrolled`
                 )}
               </span>
             </div>
