@@ -26,9 +26,8 @@ export function useUserStats() {
         })
         const data = await response.json()
         
-        // Add the calculated additional users to the total
-        const additionalUsers = calculateAdditionalUsers()
-        data.totalPremiumUsers += additionalUsers
+        // Just use the calculated total (which includes the base number)
+        data.totalPremiumUsers = calculateAdditionalUsers()
 
         setStats(data)
       } catch (error) {

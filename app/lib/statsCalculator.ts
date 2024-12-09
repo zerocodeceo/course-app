@@ -1,5 +1,6 @@
 // Launch date of your platform
 export const LAUNCH_DATE = new Date('2024-02-01') // Adjust this to your actual launch date
+export const BASE_PREMIUM_USERS = 71 // Base number of premium users
 
 export function calculateAdditionalUsers(): number {
   const today = new Date()
@@ -17,5 +18,5 @@ export function calculateAdditionalUsers(): number {
     totalAdditional += dailyIncrease
   }
   
-  return totalAdditional
+  return BASE_PREMIUM_USERS + totalAdditional
 } 

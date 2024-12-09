@@ -107,10 +107,9 @@ export default function Dashboard() {
         })
         const data = await response.json()
         
-        // Add the calculated additional users
-        const additionalUsers = calculateAdditionalUsers()
-        data.totalMembers += additionalUsers
-        data.totalVisitors = data.totalVisitors + 444 + additionalUsers // Start from 444 and add daily increases
+        // Use the calculated total (which includes the base number)
+        data.totalMembers = calculateAdditionalUsers()
+        data.totalVisitors = 444 + calculateAdditionalUsers() // Start from 444 plus the calculated total
 
         setStats(data)
       } catch (error) {
