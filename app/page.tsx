@@ -17,8 +17,8 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const { stats, loading: statsLoading } = useUserStats()
   const calculatedStats = calculateStats({
-    totalVisitors: stats.totalPremiumUsers || 0,
-    totalMembers: stats.totalPremiumUsers || 0,
+    totalVisitors: (stats.totalPremiumUsers - 2) || 0,
+    totalMembers: (stats.totalPremiumUsers - 2) || 0,
     totalRevenue: 0,
     memberGrowth: {
       labels: [],
