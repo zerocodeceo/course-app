@@ -193,24 +193,28 @@ export default function Dashboard() {
         for (let i = 6; i >= 0; i--) {
           const date = new Date()
           date.setDate(date.getDate() - i)
+          const pastUsers = calculateAdditionalUsers(date)
           data.push({
             time: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            members: Math.round(calculateAdditionalUsers(date))
+            members: Math.round(pastUsers)
           })
         }
         return data
       }
       default: { // year
-        const data = []
-        for (let i = 11; i >= 0; i--) {
-          const date = new Date()
-          date.setMonth(date.getMonth() - i)
-          data.push({
+        const months = []
+        const startDate = new Date('2023-11-25') // Launch date
+        const currentDate = new Date()
+        
+        let date = new Date(startDate)
+        while (date <= currentDate) {
+          months.push({
             time: date.toLocaleDateString('en-US', { month: 'short' }),
             members: Math.round(calculateAdditionalUsers(date))
           })
+          date = new Date(date.setMonth(date.getMonth() + 1))
         }
-        return data
+        return months
       }
     }
   }
