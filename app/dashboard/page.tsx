@@ -18,7 +18,7 @@ import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
-import { calculateAdditionalUsers, LAUNCH_DATE, BASE_PREMIUM_USERS, MAX_PREMIUM_USERS } from '../lib/statsCalculator'
+import { calculateAdditionalUsers, calculateRevenue } from '../lib/statsCalculator'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -181,43 +181,33 @@ export default function Dashboard() {
   // Update getChartData to use real calculated values
   const getChartData = () => {
     if (!mounted) return []
-
-    const calculatedUsers = calculateAdditionalUsers()
     
     switch (timeframe) {
       case 'today':
         return [{
           time: 'Today',
-          members: calculatedUsers
+          members: Math.round(calculateAdditionalUsers())
         }]
       case 'week': {
-        // Generate last 7 days of data
         const data = []
         for (let i = 6; i >= 0; i--) {
           const date = new Date()
           date.setDate(date.getDate() - i)
-          const pastDiffDays = Math.ceil(Math.abs(date.getTime() - LAUNCH_DATE.getTime()) / (1000 * 60 * 60 * 24))
-          const pastAdditionalUsers = Math.min(BASE_PREMIUM_USERS + (pastDiffDays * 1.5), MAX_PREMIUM_USERS)
-          
           data.push({
             time: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            members: Math.round(pastAdditionalUsers)
+            members: Math.round(calculateAdditionalUsers(date))
           })
         }
         return data
       }
       default: { // year
-        // Generate monthly data
         const data = []
         for (let i = 11; i >= 0; i--) {
           const date = new Date()
           date.setMonth(date.getMonth() - i)
-          const pastDiffDays = Math.ceil(Math.abs(date.getTime() - LAUNCH_DATE.getTime()) / (1000 * 60 * 60 * 24))
-          const pastAdditionalUsers = Math.min(BASE_PREMIUM_USERS + (pastDiffDays * 1.5), MAX_PREMIUM_USERS)
-          
           data.push({
             time: date.toLocaleDateString('en-US', { month: 'short' }),
-            members: Math.round(pastAdditionalUsers)
+            members: Math.round(calculateAdditionalUsers(date))
           })
         }
         return data
@@ -569,7 +559,10 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">
-                        <AnimatedNumber value={stats.totalRevenue} prefix="$" />
+                        <AnimatedNumber 
+                          value={Math.round(calculateRevenue() * 100) / 100} 
+                          prefix="$" 
+                        />
                       </div>
                       <p className="text-xs text-gray-500">
                         Lifetime earnings
