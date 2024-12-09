@@ -18,7 +18,6 @@ import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
-import { calculateAdditionalUsers, calculateRevenue } from '../lib/statsCalculator'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -106,14 +105,7 @@ export default function Dashboard() {
           credentials: 'include'
         })
         const data = await response.json()
-        
-        // Override the values with our calculations
-        const calculatedUsers = calculateAdditionalUsers()
-        setStats({
-          ...data,
-          totalMembers: calculatedUsers,
-          totalVisitors: 501 + calculatedUsers
-        })
+        setStats(data)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       }
@@ -178,44 +170,26 @@ export default function Dashboard() {
     )
   }
 
-  // Update getChartData to use real calculated values
+  // Update getChartData to use real data only
   const getChartData = () => {
-    if (!mounted) return []
-    
+    if (!mounted || !stats.memberGrowth) return []
+
     switch (timeframe) {
       case 'today':
-        return [{
+        return stats.memberGrowth.data.slice(-1).map((count) => ({
           time: 'Today',
-          members: Math.round(calculateAdditionalUsers())
-        }]
-      case 'week': {
-        const data = []
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date()
-          date.setDate(date.getDate() - i)
-          const pastUsers = calculateAdditionalUsers(date)
-          data.push({
-            time: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            members: Math.round(pastUsers)
-          })
-        }
-        return data
-      }
-      default: { // year
-        const months = []
-        const startDate = new Date('2023-11-25') // Launch date
-        const currentDate = new Date()
-        
-        let date = new Date(startDate)
-        while (date <= currentDate) {
-          months.push({
-            time: date.toLocaleDateString('en-US', { month: 'short' }),
-            members: Math.round(calculateAdditionalUsers(date))
-          })
-          date = new Date(date.setMonth(date.getMonth() + 1))
-        }
-        return months
-      }
+          members: count + 4
+        }))
+      case 'week':
+        return stats.memberGrowth.data.slice(-7).map((count, index) => ({
+          time: stats.memberGrowth.labels.slice(-7)[index] || `Day ${index + 1}`,
+          members: count + 6
+        }))
+      default: // year
+        return stats.memberGrowth.labels.map((label, index) => ({
+          time: label,
+          members: stats.memberGrowth.data[index]
+        }))
     }
   }
 
@@ -546,7 +520,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-purple-600">
-                        <AnimatedNumber value={calculateAdditionalUsers()} />
+                        <AnimatedNumber value={stats.totalMembers} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Paid customers
@@ -563,10 +537,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">
-                        <AnimatedNumber 
-                          value={Math.round(calculateRevenue() * 100) / 100} 
-                          prefix="$" 
-                        />
+                        <AnimatedNumber value={stats.totalRevenue} prefix="$" />
                       </div>
                       <p className="text-xs text-gray-500">
                         Lifetime earnings
@@ -583,7 +554,8 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        <AnimatedNumber value={501 + calculateAdditionalUsers()} />
+                        {/* CHANGEHERE */}
+                        <AnimatedNumber value={stats.totalVisitors + 251} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users

@@ -1,7 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { API_URL } from '../lib/api'
-import { calculateAdditionalUsers } from '../lib/statsCalculator'
 
 type UserStats = {
   totalPremiumUsers: number
@@ -25,10 +24,6 @@ export function useUserStats() {
           credentials: 'include'
         })
         const data = await response.json()
-        
-        // Just use the calculated total (which includes the base number)
-        data.totalPremiumUsers = calculateAdditionalUsers()
-
         setStats(data)
       } catch (error) {
         console.error('Error fetching user stats:', error)
