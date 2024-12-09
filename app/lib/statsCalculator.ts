@@ -50,6 +50,9 @@ export const calculateStats = (baseStats: {
     additionalMembers += dailyMembers;
   }
 
+  // Calculate final total for members
+  const totalMembers = baseStats.totalMembers + additionalMembers;
+
   // Generate chart data separately with linear growth
   for (let day = 1; day <= daysPassed; day++) {
     if (day > startDay) {
@@ -61,10 +64,17 @@ export const calculateStats = (baseStats: {
       });
       
       // Calculate a smooth progression from initial members to total members
-      const progress = (day - 1) / daysPassed;
-      const currentMembers = Math.round(
-        initialMembers + (baseStats.totalMembers + additionalMembers - initialMembers) * progress
-      );
+      const progress = day / daysPassed; // Removed the -1 to make it reach 100%
+      let currentMembers;
+      
+      if (day === daysPassed) {
+        // Make sure the last point exactly matches total members
+        currentMembers = totalMembers;
+      } else {
+        currentMembers = Math.round(
+          initialMembers + (totalMembers - initialMembers) * progress
+        );
+      }
       
       dailyGrowth.push({
         time: formattedDate,
@@ -75,7 +85,6 @@ export const calculateStats = (baseStats: {
 
   const baseVisitors = baseStats.totalVisitors + 251;
   const totalVisitors = baseVisitors + additionalVisitors;
-  const totalMembers = baseStats.totalMembers + additionalMembers;
   const totalRevenue = totalMembers * 29.99;
 
   return {
