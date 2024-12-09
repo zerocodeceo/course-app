@@ -18,6 +18,7 @@ import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
+import { calculateStats } from '../lib/statsCalculator'
 
 // Dynamically import components that use browser APIs
 const DynamicLineChart = dynamic(
@@ -87,6 +88,8 @@ export default function Dashboard() {
     watchedDurations: {} as Record<string, number>,
     completed: {} as Record<string, boolean>
   })
+
+  const calculatedStats = calculateStats(stats)
 
   useEffect(() => {
     setMounted(true)
@@ -520,7 +523,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-purple-600">
-                        <AnimatedNumber value={stats.totalMembers} />
+                        <AnimatedNumber value={calculatedStats.totalMembers} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Paid customers
@@ -537,7 +540,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">
-                        <AnimatedNumber value={stats.totalRevenue} prefix="$" />
+                        <AnimatedNumber value={calculatedStats.totalRevenue} prefix="$" />
                       </div>
                       <p className="text-xs text-gray-500">
                         Lifetime earnings
@@ -554,8 +557,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        {/* CHANGEHERE */}
-                        <AnimatedNumber value={stats.totalVisitors + 251} />
+                        <AnimatedNumber value={calculatedStats.totalVisitors} />
                       </div>
                       <p className="text-xs text-gray-500">
                         Registered users
