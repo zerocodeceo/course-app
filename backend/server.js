@@ -78,51 +78,14 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
-  },
-  proxy: true
-}))
-
-app.use(cors({
-  origin: function(origin, callback) {
-    const allowedOrigins = [
-      'https://zerocodeceo.com',
-      'https://www.zerocodeceo.com',
-      'http://localhost:3000',
-      'https://zerocodeceo.vercel.app' // Add your Vercel domain
-    ];
-
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('Blocked origin:', origin); // Add logging to debug
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
-  exposedHeaders: ['Set-Cookie']
-}))
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+    path: '/'
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
-  next();
-})
+}))
 
 app.use((req, res, next) => {
-  console.log('Incoming request cookies:', req.headers.cookie)
+  res.header('Access-Control-Allow-Credentials', 'true')
   next()
 })
-
-const isProduction = process.env.NODE_ENV === 'production'
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -194,101 +157,65 @@ app.get('/auth/google/callback',
     session: true 
   }),
   async function(req, res) {
-    if (!req.user) {
-      return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`)
-    }
-
     try {
+      // Update last login
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      req.session.regenerate((err) => {
+      // Save session explicitly
+      req.session.save((err) => {
         if (err) {
-          console.error('Session regeneration error:', err)
-          return res.redirect(`${process.env.CLIENT_URL}/login?error=session`)
+          console.error('Session save error:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-
-        req.session.passport = { user: req.user._id }
-        
-        req.session.save((err) => {
-          if (err) {
-            console.error('Session save error:', err)
-            return res.redirect(`${process.env.CLIENT_URL}/login?error=save`)
-          }
-          
-          res.cookie('user_id', req.user._id, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000,
-            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
-          })
-          
-          res.redirect(process.env.CLIENT_URL)
-        })
+        res.redirect(process.env.CLIENT_URL)
       })
     } catch (error) {
       console.error('Error in callback:', error)
-      res.redirect(`${process.env.CLIENT_URL}/login?error=server`)
+      res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  const userId = req.session?.passport?.user || req.cookies?.user_id
+  console.log('Auth status check:', {
+    sessionID: req.sessionID,
+    hasSession: !!req.session,
+    hasPassport: !!req.session?.passport,
+    user: req.user?._id
+  })
 
-  if (!userId) {
-    return res.json({
-      user: null,
-      sessionId: null,
-      sessionExists: false,
-      hasUser: false,
-      isAuthenticated: false
-    })
-  }
-
-  try {
-    const user = await User.findById(userId)
-    if (!user) {
-      req.session.destroy(() => {})
-      res.clearCookie('user_id')
-      return res.json({
-        user: null,
-        sessionId: null,
-        sessionExists: false,
-        hasUser: false,
-        isAuthenticated: false
+  if (req.isAuthenticated()) {
+    try {
+      await User.findByIdAndUpdate(req.user._id, {
+        lastLogin: new Date()
       })
+    } catch (error) {
+      console.error('Error updating lastLogin:', error)
     }
-
-    user.lastLogin = new Date()
-    await user.save()
-
-    if (!req.session.passport) {
-      req.session.passport = { user: user._id }
-      await new Promise(resolve => req.session.save(resolve))
-    }
-
-    res.json({
-      user,
-      sessionId: req.sessionID,
-      sessionExists: true,
-      hasUser: true,
-      isAuthenticated: true
-    })
-  } catch (error) {
-    console.error('Auth status error:', error)
-    res.status(500).json({ error: 'Server error' })
   }
+
+  res.json({
+    user: req.isAuthenticated() ? req.user : null,
+    sessionId: req.sessionID,
+    sessionExists: !!req.session,
+    hasUser: !!req.user,
+    isAuthenticated: req.isAuthenticated()
+  })
 })
 
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
-      return res.status(500).json({ error: 'Error logging out' })
+      console.error('Logout error:', err)
     }
-    res.redirect(process.env.CLIENT_URL)
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destroy error:', err)
+      }
+      res.redirect(process.env.CLIENT_URL)
+    })
   })
 })
 
