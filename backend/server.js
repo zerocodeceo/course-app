@@ -93,7 +93,8 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
+    path: '/',
+    domain: '.zerocodeceo.com'
   }
 }))
 
@@ -193,14 +194,18 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', async (req, res) => {
+  console.log('Auth Status Check:');
+  console.log('Session:', req.session);
+  console.log('User:', req.user);
+  console.log('Is Authenticated:', req.isAuthenticated());
+
   if (req.isAuthenticated()) {
     try {
-      // Update last login time when checking status
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
     } catch (error) {
-      console.error('Error updating lastLogin:', error)
+      console.error('Error updating lastLogin:', error);
     }
   }
 
@@ -210,7 +215,7 @@ app.get('/auth/status', async (req, res) => {
     sessionExists: !!req.session,
     hasUser: !!req.user,
     isAuthenticated: req.isAuthenticated()
-  })
+  });
 })
 
 app.get('/auth/logout', (req, res) => {
@@ -663,7 +668,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
 
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
   
   // Handle session errors
