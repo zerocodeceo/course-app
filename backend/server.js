@@ -206,34 +206,27 @@ app.get('/auth/google/callback',
 );
 
 app.get('/auth/status', async (req, res) => {
-  console.log('Auth Status Check:');
-  console.log('Session ID:', req.sessionID);
-  console.log('Session:', req.session);
-  console.log('User ID in session:', req.session?.userId);
-  console.log('User in request:', req.user?._id);
-  console.log('Is Authenticated:', req.isAuthenticated());
-
   try {
-    // If we have a userId in session but no user object, try to restore it
-    if (req.session?.userId && !req.user) {
-      const user = await User.findById(req.session.userId);
-      if (user) {
-        req.login(user, (err) => {
-          if (err) {
-            console.error('Error restoring user session:', err);
-          }
-        });
-      }
-    }
+    console.log('Auth Status Check:', {
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      hasUser: !!req.user
+    });
 
-    if (req.isAuthenticated()) {
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      });
-    }
-
+    // Return a consistent response structure
     res.json({
-      user: req.isAuthenticated() ? req.user : null,
+      success: true,
+      user: req.isAuthenticated() ? {
+        _id: req.user._id,
+        googleId: req.user.googleId,
+        displayName: req.user.displayName,
+        email: req.user.email,
+        profilePicture: req.user.profilePicture,
+        plan: req.user.plan,
+        location: req.user.location,
+        purchaseDate: req.user.purchaseDate,
+        createdAt: req.user.createdAt
+      } : null,
       sessionId: req.sessionID,
       sessionExists: !!req.session,
       hasUser: !!req.user,
@@ -241,9 +234,13 @@ app.get('/auth/status', async (req, res) => {
     });
   } catch (error) {
     console.error('Auth status error:', error);
-    res.status(500).json({ error: 'Error checking auth status' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error checking auth status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-})
+});
 
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
@@ -699,23 +696,35 @@ app.get('/auth/check-progress', (req, res) => {
 });
 
 // Add this before the error handler
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
 // Update the error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   console.error('Global error handler:', err);
+  
+  // Log the full error stack in development
+  if (process.env.NODE_ENV === 'development') {
+    console.error(err.stack);
+  }
   
   if (err.name === 'AuthenticationError') {
     return res.redirect(`${process.env.CLIENT_URL}/login`);
   }
   
-  // Don't expose error details in production
-  const message = process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error';
-  
   res.status(err.status || 500).json({
-    error: message
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+    status: err.status || 500,
+    path: req.path
+  });
+});
+
+// Add this before the error handler to catch unhandled routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Not Found',
+    path: req.path
   });
 });
 

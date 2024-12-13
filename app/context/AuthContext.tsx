@@ -34,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
   const checkAuthStatus = async () => {
     try {
@@ -49,12 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       console.log('Auth status response:', data);
       
-      if (data.user) {
+      if (data.success && data.user) {
         setUser(data.user);
         if (window.location.search.includes('mobile=true')) {
           window.history.replaceState({}, '', window.location.pathname);
         }
       } else {
+        console.log('Auth status unsuccessful:', data);
         setUser(null);
       }
     } catch (error) {
@@ -87,15 +89,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const isMobile = /mobile/i.test(window.navigator.userAgent);
-    if (isMobile && window.location.search.includes('mobile=true')) {
-      // We've returned from mobile auth, check status immediately
-      checkAuthStatus();
-    } else {
-      // Always check auth status on mount for non-mobile or non-redirect cases
-      checkAuthStatus();
-    }
+    const initAuth = async () => {
+      try {
+        await checkAuthStatus();
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+        setError(err instanceof Error ? err : new Error('Auth initialization failed'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
+
+  if (error) {
+    return <div>Error initializing authentication. Please try refreshing the page.</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>
