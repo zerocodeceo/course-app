@@ -34,38 +34,30 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status...');
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
-      });
+      })
       
-      const data = await response.json();
-      console.log('Auth status response:', data);
+      const data = await response.json()
       
-      if (data.success && data.user) {
-        setUser(data.user);
-        if (window.location.search.includes('mobile=true')) {
-          window.history.replaceState({}, '', window.location.pathname);
-        }
+      if (data.user) {
+        setUser(data.user)
       } else {
-        console.log('Auth status unsuccessful:', data);
-        setUser(null);
+        setUser(null)
       }
     } catch (error) {
-      console.error('Auth status check error:', error);
-      setUser(null);
+      setUser(null)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const refreshUser = async () => {
     try {
@@ -89,23 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        await checkAuthStatus();
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-        setError(err instanceof Error ? err : new Error('Auth initialization failed'));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
-
-  if (error) {
-    return <div>Error initializing authentication. Please try refreshing the page.</div>;
-  }
+    checkAuthStatus()
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>
