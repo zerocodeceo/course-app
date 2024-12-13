@@ -34,7 +34,6 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
   const [loading, setLoading] = useState(true)
-  const [lastCheck, setLastCheck] = useState(0)
 
   const checkAuthStatus = async () => {
     try {
