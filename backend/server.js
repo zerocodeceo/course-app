@@ -644,7 +644,7 @@ app.post('/update-location', async (req, res) => {
 })
 
 // Error handler should be after routes but before app.listen
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   console.error('Global error handler:', err)
   if (err.name === 'AuthenticationError') {
     return res.redirect(`${process.env.CLIENT_URL}/login`)
