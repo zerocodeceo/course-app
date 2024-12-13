@@ -62,7 +62,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
   }
 })
 
-app.use(express.json())
+// 1. CORS first
 app.use(cors({
   origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
   credentials: true,
@@ -71,21 +71,17 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }))
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
-  next();
-})
+// 2. Body parsing middleware
+app.use(express.json())
 
+// 3. Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: true,
   saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    autoRemove: 'native',
-    touchAfter: 24 * 3600
+    ttl: 24 * 60 * 60
   }),
   name: 'sid',
   cookie: {
@@ -93,47 +89,50 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/',
-    domain: '.zerocodeceo.com'
+    path: '/'
   }
 }))
 
+// 4. Initialize Passport
 app.use(passport.initialize())
 app.use(passport.session())
+
+// 5. Headers middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie')
+  next()
+})
 
 // Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
-    proxy: true,
-    passReqToCallback: true,
-    userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo'
+    proxy: true
   },
-  async function(req, accessToken, refreshToken, profile, cb) {
+  async function(accessToken, refreshToken, profile, cb) {
     try {
-      console.log('Google Strategy - Processing profile:', profile.id);
-      
-      let user = await User.findOne({ googleId: profile.id });
+      console.log('Google Strategy - Processing profile:', profile.id)
+      let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
-        console.log('Creating new user for Google ID:', profile.id);
         user = await User.create({
           googleId: profile.id,
           displayName: profile.displayName,
           email: profile.emails[0].value,
           profilePicture: profile.photos[0].value,
           plan: 'basic'
-        });
+        })
       }
       
-      return cb(null, user);
+      return cb(null, user)
     } catch (error) {
-      console.error('Google Strategy error:', error);
-      return cb(error, null);
+      console.error('Google Strategy error:', error)
+      return cb(error, null)
     }
   }
-));
+))
 
 passport.serializeUser((user, done) => {
   done(null, user.id)
@@ -156,39 +155,20 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true,
-    failureMessage: true
+    session: true
   }),
   async function(req, res) {
     try {
-      console.log('Google auth callback - User:', req.user?._id);
+      console.log('Google callback - user:', req.user?._id)
       
-      if (!req.user) {
-        console.error('No user object in request after Google auth');
-        return res.redirect(`${process.env.CLIENT_URL}/login`);
-      }
-
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      });
+      })
 
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.redirect(`${process.env.CLIENT_URL}/login`);
-        }
-
-        req.login(req.user, (loginErr) => {
-          if (loginErr) {
-            console.error('Login error:', loginErr);
-            return res.redirect(`${process.env.CLIENT_URL}/login`);
-          }
-          res.redirect(process.env.CLIENT_URL);
-        });
-      });
+      res.redirect(process.env.CLIENT_URL)
     } catch (error) {
-      console.error('Google callback error:', error);
-      res.redirect(`${process.env.CLIENT_URL}/login`);
+      console.error('Callback error:', error)
+      res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
@@ -663,22 +643,19 @@ app.post('/update-location', async (req, res) => {
   }
 })
 
-const PORT = process.env.PORT || 8000
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
-
+// Error handler should be after routes but before app.listen
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
-  
-  // Handle session errors
+  console.error('Global error handler:', err)
   if (err.name === 'AuthenticationError') {
-    return res.redirect(`${process.env.CLIENT_URL}/login`);
+    return res.redirect(`${process.env.CLIENT_URL}/login`)
   }
-  
-  // Handle other errors
   res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-}); 
+  })
+})
+
+const PORT = process.env.PORT || 8000
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+}) 
