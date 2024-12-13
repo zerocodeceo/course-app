@@ -77,13 +77,22 @@ app.use((req, res, next) => {
   next();
 })
 
+app.use((req, res, next) => {
+  console.log('Incoming request cookies:', req.headers.cookie)
+  next()
+})
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    clientPromise: mongoose.connection.asPromise().then(connection => {
+      console.log('MongoDB session store connected')
+      return connection.getClient()
+    })
   }),
   name: 'sid',
   cookie: {
@@ -94,6 +103,15 @@ app.use(session({
     path: '/'
   }
 }))
+
+app.use((req, res, next) => {
+  console.log('Session after middleware:', {
+    id: req.sessionID,
+    cookie: req.session?.cookie,
+    user: req.session?.passport?.user
+  })
+  next()
+})
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -161,6 +179,8 @@ app.get('/auth/google/callback',
   }),
   async function(req, res) {
     console.log('Google callback - User:', req.user?._id)
+    console.log('Google callback - Session:', req.session)
+    
     try {
       // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
@@ -173,8 +193,17 @@ app.get('/auth/google/callback',
           console.error('Error in req.login:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-        console.log('Login successful, redirecting to home')
-        res.redirect(process.env.CLIENT_URL)
+        
+        // Save session explicitly
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session:', err)
+            return res.redirect(`${process.env.CLIENT_URL}/login`)
+          }
+          console.log('Session saved successfully:', req.sessionID)
+          console.log('Final session state:', req.session)
+          res.redirect(process.env.CLIENT_URL)
+        })
       })
     } catch (error) {
       console.error('Error in callback handler:', error)
@@ -184,10 +213,15 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', async (req, res) => {
+  console.log('Auth status check - Full request cookies:', req.headers.cookie)
   console.log('Auth status check - Session ID:', req.sessionID)
+  console.log('Auth status check - Session:', {
+    id: req.sessionID,
+    cookie: req.session?.cookie,
+    passport: req.session?.passport,
+    user: req.user
+  })
   console.log('Auth status check - Is Authenticated:', req.isAuthenticated())
-  console.log('Auth status check - User:', req.user?._id)
-  console.log('Auth status check - Session:', req.session)
 
   if (req.isAuthenticated()) {
     try {
@@ -205,7 +239,11 @@ app.get('/auth/status', async (req, res) => {
     sessionId: req.sessionID,
     sessionExists: !!req.session,
     hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated()
+    isAuthenticated: req.isAuthenticated(),
+    sessionDetails: {
+      passport: req.session?.passport,
+      cookie: req.session?.cookie
+    }
   })
 })
 
