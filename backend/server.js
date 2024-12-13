@@ -717,7 +717,7 @@ app.get('/auth/check-progress', (req, res) => {
 });
 
 // Error handler should be after routes but before app.listen
-app.use((err, req, res, next) => {
+app.use((err, req, res, ) => {
   console.error('Global error handler:', err)
   if (err.name === 'AuthenticationError') {
     return res.redirect(`${process.env.CLIENT_URL}/login`)
