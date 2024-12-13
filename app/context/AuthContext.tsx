@@ -34,8 +34,16 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
   const [loading, setLoading] = useState(true)
+  const [lastCheck, setLastCheck] = useState(0)
 
   const checkAuthStatus = async () => {
+    // Prevent multiple checks within 1 second
+    const now = Date.now()
+    if (now - lastCheck < 1000) {
+      return
+    }
+    setLastCheck(now)
+
     console.log('Checking auth status...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
@@ -51,13 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       const data = await response.json()
-      console.log('Auth status response:', data)
       
       if (data.user) {
-        console.log('Setting user in context:', data.user._id)
         setUser(data.user)
       } else {
-        console.log('No user found in response, setting null')
         setUser(null)
       }
     } catch (error) {
@@ -68,39 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const refreshUser = async () => {
-    console.log('Refreshing user...')
-    try {
-      const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      const data = await response.json()
-      console.log('Refresh user response:', data)
-      
-      if (data.user) {
-        console.log('Setting refreshed user:', data.user._id)
-        setUser(data.user)
-      } else {
-        console.log('No user found in refresh, setting null')
-        setUser(null)
-      }
-    } catch (error) {
-      console.error('Error refreshing user:', error)
-      setUser(null)
-    }
-  }
-
   useEffect(() => {
     checkAuthStatus()
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser: checkAuthStatus }}>
       {children}
     </AuthContext.Provider>
   )

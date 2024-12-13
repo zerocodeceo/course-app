@@ -108,18 +108,16 @@ app.use(session({
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
-    autoRemove: 'native',
-    touchAfter: 24 * 3600 // Only update the session every 24 hours unless the data changes
+    autoRemove: 'native'
   }),
   name: 'sid',
   cookie: {
-    secure: isProduction, // Only use secure cookies in production
+    secure: true,
     httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax',
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
-  },
-  proxy: isProduction // Trust the reverse proxy in production
+  }
 }))
 
 app.use((req, res, next) => {
@@ -199,45 +197,19 @@ app.get('/auth/google/callback',
     session: true 
   }),
   async function(req, res) {
-    console.log('Google callback - User:', req.user?._id)
-    console.log('Google callback - Session:', req.session)
-    
     try {
+      // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      // First, ensure the user is logged in
-      req.login(req.user, (loginErr) => {
-        if (loginErr) {
-          console.error('Error in req.login:', loginErr)
+      // Save the session before redirecting
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-
-        // Then regenerate the session to prevent session fixation
-        req.session.regenerate((regenerateErr) => {
-          if (regenerateErr) {
-            console.error('Error regenerating session:', regenerateErr)
-            return res.redirect(`${process.env.CLIENT_URL}/login`)
-          }
-
-          // Set the user in the new session
-          req.session.passport = { user: req.user._id }
-          
-          // Save the session
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('Error saving session:', saveErr)
-              return res.redirect(`${process.env.CLIENT_URL}/login`)
-            }
-            console.log('Session saved successfully. Final state:', {
-              sessionID: req.sessionID,
-              passport: req.session.passport,
-              user: req.user._id
-            })
-            res.redirect(process.env.CLIENT_URL)
-          })
-        })
+        res.redirect(process.env.CLIENT_URL)
       })
     } catch (error) {
       console.error('Error in callback handler:', error)
@@ -247,13 +219,15 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', async (req, res) => {
-  console.log('Auth status check - Full request cookies:', req.headers.cookie)
-  console.log('Auth status check - Session:', {
-    id: req.sessionID,
-    passport: req.session?.passport,
-    user: req.user?._id,
-    initialized: req.session?.initialized
-  })
+  if (!req.session || !req.session.passport) {
+    return res.json({
+      user: null,
+      sessionId: req.sessionID,
+      sessionExists: false,
+      hasUser: false,
+      isAuthenticated: false
+    })
+  }
 
   if (req.isAuthenticated()) {
     try {
@@ -262,7 +236,6 @@ app.get('/auth/status', async (req, res) => {
         { lastLogin: new Date() },
         { new: true }
       )
-      console.log('Updated user in status check:', user._id)
       res.json({
         user,
         sessionId: req.sessionID,
@@ -278,14 +251,9 @@ app.get('/auth/status', async (req, res) => {
     res.json({
       user: null,
       sessionId: req.sessionID,
-      sessionExists: !!req.session,
+      sessionExists: true,
       hasUser: false,
-      isAuthenticated: false,
-      debug: {
-        sessionPresent: !!req.session,
-        hasPassport: !!req.session?.passport,
-        passportUser: req.session?.passport?.user
-      }
+      isAuthenticated: false
     })
   }
 })
