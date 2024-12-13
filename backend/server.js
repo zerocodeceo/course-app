@@ -62,7 +62,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
   }
 })
 
-app.use(express.json())
+// 1. CORS first
 app.use(cors({
   origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
   credentials: true,
@@ -71,16 +71,14 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }))
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
-  next();
-})
+// 2. Body parsing middleware
+app.use(express.json())
 
+// 3. Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60
@@ -95,8 +93,16 @@ app.use(session({
   }
 }))
 
+// 4. Initialize Passport
 app.use(passport.initialize())
 app.use(passport.session())
+
+// 5. Headers middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie')
+  next()
+})
 
 // Passport configuration
 passport.use(new GoogleStrategy({
@@ -107,6 +113,7 @@ passport.use(new GoogleStrategy({
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
+      console.log('Google Strategy - Processing profile:', profile.id)
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
@@ -121,6 +128,7 @@ passport.use(new GoogleStrategy({
       
       return cb(null, user)
     } catch (error) {
+      console.error('Google Strategy error:', error)
       return cb(error, null)
     }
   }
@@ -147,34 +155,37 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
+    session: true
   }),
   async function(req, res) {
     try {
-      // Update last login time
+      console.log('Google callback - user:', req.user?._id)
+      
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        res.redirect(process.env.CLIENT_URL)
-      })
+      res.redirect(process.env.CLIENT_URL)
     } catch (error) {
+      console.error('Callback error:', error)
       res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
+  console.log('Auth Status Check:');
+  console.log('Session:', req.session);
+  console.log('User:', req.user);
+  console.log('Is Authenticated:', req.isAuthenticated());
+
   if (req.isAuthenticated()) {
     try {
-      // Update last login time when checking status
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
     } catch (error) {
-      console.error('Error updating lastLogin:', error)
+      console.error('Error updating lastLogin:', error);
     }
   }
 
@@ -184,7 +195,7 @@ app.get('/auth/status', async (req, res) => {
     sessionExists: !!req.session,
     hasUser: !!req.user,
     isAuthenticated: req.isAuthenticated()
-  })
+  });
 })
 
 app.get('/auth/logout', (req, res) => {
@@ -630,6 +641,18 @@ app.post('/update-location', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to update location' })
   }
+})
+
+// Error handler should be after routes but before app.listen
+app.use((err, req, res) => {
+  console.error('Global error handler:', err)
+  if (err.name === 'AuthenticationError') {
+    return res.redirect(`${process.env.CLIENT_URL}/login`)
+  }
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  })
 })
 
 const PORT = process.env.PORT || 8000
