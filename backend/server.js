@@ -63,8 +63,21 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 })
 
 app.use(express.json())
+
+const allowedOrigins = [
+  'https://zerocodeceo.com', 
+  'https://www.zerocodeceo.com', 
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
@@ -72,6 +85,10 @@ app.use(cors({
 }))
 
 app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
   next();
@@ -88,17 +105,13 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    clientPromise: mongoose.connection.asPromise().then(connection => {
-      console.log('MongoDB session store connected')
-      return connection.getClient()
-    })
+    ttl: 24 * 60 * 60
   }),
   name: 'sid',
   cookie: {
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   }
@@ -182,26 +195,23 @@ app.get('/auth/google/callback',
     console.log('Google callback - Session:', req.session)
     
     try {
-      // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
-      console.log('Updated last login for user:', req.user._id)
-
-      req.login(req.user, (err) => {
+      
+      // Force session regeneration
+      req.session.regenerate(function(err) {
         if (err) {
-          console.error('Error in req.login:', err)
+          console.error('Error regenerating session:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
         
-        // Save session explicitly
-        req.session.save((err) => {
+        req.session.passport = { user: req.user._id }
+        req.session.save(function(err) {
           if (err) {
             console.error('Error saving session:', err)
             return res.redirect(`${process.env.CLIENT_URL}/login`)
           }
-          console.log('Session saved successfully:', req.sessionID)
-          console.log('Final session state:', req.session)
           res.redirect(process.env.CLIENT_URL)
         })
       })
