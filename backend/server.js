@@ -62,28 +62,43 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
   }
 })
 
-app.use(express.json())
+// 1. CORS first
 app.use(cors({
-  origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://zerocodeceo.com',
+      'https://www.zerocodeceo.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      undefined
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.error('CORS blocked origin:', origin);
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
   exposedHeaders: ['Set-Cookie']
 }))
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
-  next();
-})
+// 2. Body parsing middleware
+app.use(express.json())
 
+// 3. Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+    touchAfter: 24 * 3600
   }),
   name: 'sid',
   cookie: {
@@ -95,8 +110,16 @@ app.use(session({
   }
 }))
 
+// 4. Initialize Passport
 app.use(passport.initialize())
 app.use(passport.session())
+
+// 5. Headers middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie')
+  next()
+})
 
 // Passport configuration
 passport.use(new GoogleStrategy({
@@ -107,6 +130,7 @@ passport.use(new GoogleStrategy({
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
+      console.log('Google Strategy - Processing profile:', profile.id)
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
@@ -121,6 +145,7 @@ passport.use(new GoogleStrategy({
       
       return cb(null, user)
     } catch (error) {
+      console.error('Google Strategy error:', error)
       return cb(error, null)
     }
   }
@@ -141,51 +166,83 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-)
+  (req, res, next) => {
+    try {
+      passport.authenticate('google', { 
+        scope: ['profile', 'email'],
+        prompt: 'select_account'
+      })(req, res, next);
+    } catch (error) {
+      console.error('Auth error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login`);
+    }
+  }
+);
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
-  }),
-  async function(req, res) {
+  (req, res, next) => {
+    passport.authenticate('google', { 
+      failureRedirect: `${process.env.CLIENT_URL}/login`,
+      session: true,
+      failureMessage: true
+    })(req, res, next);
+  },
+  async (req, res) => {
     try {
-      // Update last login time
+      if (!req.user) {
+        console.error('No user in callback');
+        return res.redirect(`${process.env.CLIENT_URL}/login`);
+      }
+
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
 
-      req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        res.redirect(process.env.CLIENT_URL)
-      })
+      res.redirect(process.env.CLIENT_URL);
     } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL}/login`)
+      console.error('Callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login`);
     }
   }
-)
+);
 
 app.get('/auth/status', async (req, res) => {
-  if (req.isAuthenticated()) {
-    try {
-      // Update last login time when checking status
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      })
-    } catch (error) {
-      console.error('Error updating lastLogin:', error)
-    }
-  }
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    console.log('Auth Status Check:', {
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      hasUser: !!req.user
+    });
 
-  res.json({
-    user: req.isAuthenticated() ? req.user : null,
-    sessionId: req.sessionID,
-    sessionExists: !!req.session,
-    hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated()
-  })
-})
+    return res.json({
+      success: true,
+      user: req.isAuthenticated() ? {
+        _id: req.user._id,
+        googleId: req.user.googleId,
+        displayName: req.user.displayName,
+        email: req.user.email,
+        profilePicture: req.user.profilePicture,
+        plan: req.user.plan,
+        location: req.user.location,
+        purchaseDate: req.user.purchaseDate,
+        createdAt: req.user.createdAt
+      } : null,
+      sessionId: req.sessionID,
+      sessionExists: !!req.session,
+      hasUser: !!req.user,
+      isAuthenticated: req.isAuthenticated()
+    });
+  } catch (error) {
+    console.error('Auth status error:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Error checking auth status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
 
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
@@ -265,22 +322,28 @@ app.post('/verify-payment', async (req, res) => {
 })
 
 app.get('/user-stats', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   try {
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
+    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' });
     const recentPremiumUsers = await User.find({ plan: 'premium' })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select('profilePicture displayName -_id')
+      .select('profilePicture displayName -_id');
 
-    res.json({
+    return res.json({
+      success: true,
       totalPremiumUsers,
       recentPremiumUsers
-    })
+    });
   } catch (error) {
-    console.error('Error fetching user stats:', error)
-    res.status(500).json({ error: 'Error fetching user stats' })
+    console.error('Error fetching user stats:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Error fetching user stats'
+    });
   }
-})
+});
 
 app.get('/dashboard-stats', async (req, res) => {
   if (!req.user) {
@@ -631,6 +694,58 @@ app.post('/update-location', async (req, res) => {
     res.status(500).json({ error: 'Failed to update location' })
   }
 })
+
+app.get('/auth/check-progress', (req, res) => {
+  res.json({
+    inProgress: !!req.session?.passport?.oauth2,
+    sessionExists: !!req.session,
+    isAuthenticated: req.isAuthenticated()
+  });
+});
+
+// Add this before the error handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+
+// Update the error handler
+app.use((err, req, res) => {
+  console.error('Global error handler:', err);
+  
+  // Log the full error stack in development
+  if (process.env.NODE_ENV === 'development') {
+    console.error(err.stack);
+  }
+  
+  if (err.name === 'AuthenticationError') {
+    return res.redirect(`${process.env.CLIENT_URL}/login`);
+  }
+  
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+    status: err.status || 500,
+    path: req.path
+  });
+});
+
+// Add this before the error handler to catch unhandled routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Not Found',
+    path: req.path
+  });
+});
+
+// Add a global error handler to ensure JSON responses
+app.use((err, req, res) => {
+  console.error('Global error:', err);
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
