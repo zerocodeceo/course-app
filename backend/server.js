@@ -64,20 +64,21 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
 app.use(express.json())
 
-const allowedOrigins = [
-  'https://zerocodeceo.com', 
-  'https://www.zerocodeceo.com', 
-  'http://localhost:3000'
-];
-
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
+    const allowedOrigins = [
+      'https://zerocodeceo.com',
+      'https://www.zerocodeceo.com',
+      'http://localhost:3000',
+      'https://zerocodeceo.vercel.app' // Add your Vercel domain
+    ];
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'))
+      console.log('Blocked origin:', origin); // Add logging to debug
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -88,7 +89,7 @@ app.use(cors({
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Credentials', 'true');
