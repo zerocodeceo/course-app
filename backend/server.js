@@ -99,30 +99,38 @@ app.use((req, res, next) => {
   next()
 })
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+    touchAfter: 24 * 3600 // Only update the session every 24 hours unless the data changes
   }),
   name: 'sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction, // Only use secure cookies in production
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
-  }
+  },
+  proxy: isProduction // Trust the reverse proxy in production
 }))
 
 app.use((req, res, next) => {
-  console.log('Session after middleware:', {
-    id: req.sessionID,
-    cookie: req.session?.cookie,
-    user: req.session?.passport?.user
-  })
+  if (req.session && !req.session.initialized) {
+    req.session.initialized = true
+    console.log('Session initialized:', {
+      id: req.sessionID,
+      cookie: req.session.cookie,
+      user: req.session?.passport?.user
+    })
+  }
   next()
 })
 
@@ -198,21 +206,37 @@ app.get('/auth/google/callback',
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
-      
-      // Force session regeneration
-      req.session.regenerate(function(err) {
-        if (err) {
-          console.error('Error regenerating session:', err)
+
+      // First, ensure the user is logged in
+      req.login(req.user, (loginErr) => {
+        if (loginErr) {
+          console.error('Error in req.login:', loginErr)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-        
-        req.session.passport = { user: req.user._id }
-        req.session.save(function(err) {
-          if (err) {
-            console.error('Error saving session:', err)
+
+        // Then regenerate the session to prevent session fixation
+        req.session.regenerate((regenerateErr) => {
+          if (regenerateErr) {
+            console.error('Error regenerating session:', regenerateErr)
             return res.redirect(`${process.env.CLIENT_URL}/login`)
           }
-          res.redirect(process.env.CLIENT_URL)
+
+          // Set the user in the new session
+          req.session.passport = { user: req.user._id }
+          
+          // Save the session
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Error saving session:', saveErr)
+              return res.redirect(`${process.env.CLIENT_URL}/login`)
+            }
+            console.log('Session saved successfully. Final state:', {
+              sessionID: req.sessionID,
+              passport: req.session.passport,
+              user: req.user._id
+            })
+            res.redirect(process.env.CLIENT_URL)
+          })
         })
       })
     } catch (error) {
@@ -224,37 +248,46 @@ app.get('/auth/google/callback',
 
 app.get('/auth/status', async (req, res) => {
   console.log('Auth status check - Full request cookies:', req.headers.cookie)
-  console.log('Auth status check - Session ID:', req.sessionID)
   console.log('Auth status check - Session:', {
     id: req.sessionID,
-    cookie: req.session?.cookie,
     passport: req.session?.passport,
-    user: req.user
+    user: req.user?._id,
+    initialized: req.session?.initialized
   })
-  console.log('Auth status check - Is Authenticated:', req.isAuthenticated())
 
   if (req.isAuthenticated()) {
     try {
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
+      const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { lastLogin: new Date() },
+        { new: true }
+      )
+      console.log('Updated user in status check:', user._id)
+      res.json({
+        user,
+        sessionId: req.sessionID,
+        sessionExists: true,
+        hasUser: true,
+        isAuthenticated: true
       })
-      console.log('Updated last login in status check')
     } catch (error) {
       console.error('Error updating lastLogin:', error)
+      res.status(500).json({ error: 'Error updating user' })
     }
+  } else {
+    res.json({
+      user: null,
+      sessionId: req.sessionID,
+      sessionExists: !!req.session,
+      hasUser: false,
+      isAuthenticated: false,
+      debug: {
+        sessionPresent: !!req.session,
+        hasPassport: !!req.session?.passport,
+        passportUser: req.session?.passport?.user
+      }
+    })
   }
-
-  res.json({
-    user: req.isAuthenticated() ? req.user : null,
-    sessionId: req.sessionID,
-    sessionExists: !!req.session,
-    hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated(),
-    sessionDetails: {
-      passport: req.session?.passport,
-      cookie: req.session?.cookie
-    }
-  })
 })
 
 app.get('/auth/logout', (req, res) => {
