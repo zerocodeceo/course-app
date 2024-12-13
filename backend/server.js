@@ -64,6 +64,26 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
 app.use(express.json())
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: true,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60
+  }),
+  name: 'sid',
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+  },
+  proxy: true
+}))
+
 app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
@@ -103,37 +123,6 @@ app.use((req, res, next) => {
 })
 
 const isProduction = process.env.NODE_ENV === 'production'
-
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: true,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60,
-    autoRemove: 'native'
-  }),
-  name: 'sid',
-  cookie: {
-    secure: true,
-    httpOnly: true,
-    sameSite: 'none',
-    maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
-  }
-}))
-
-app.use((req, res, next) => {
-  if (req.session && !req.session.initialized) {
-    req.session.initialized = true
-    console.log('Session initialized:', {
-      id: req.sessionID,
-      cookie: req.session.cookie,
-      user: req.session?.passport?.user
-    })
-  }
-  next()
-})
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -214,12 +203,30 @@ app.get('/auth/google/callback',
         lastLogin: new Date()
       })
 
-      req.session.save((err) => {
+      req.session.regenerate((err) => {
         if (err) {
-          console.error('Session save error:', err)
+          console.error('Session regeneration error:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login?error=session`)
         }
-        res.redirect(process.env.CLIENT_URL)
+
+        req.session.passport = { user: req.user._id }
+        
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err)
+            return res.redirect(`${process.env.CLIENT_URL}/login?error=save`)
+          }
+          
+          res.cookie('user_id', req.user._id, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000,
+            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+          })
+          
+          res.redirect(process.env.CLIENT_URL)
+        })
       })
     } catch (error) {
       console.error('Error in callback:', error)
@@ -229,7 +236,9 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', async (req, res) => {
-  if (!req.sessionID || !req.session?.passport?.user) {
+  const userId = req.session?.passport?.user || req.cookies?.user_id
+
+  if (!userId) {
     return res.json({
       user: null,
       sessionId: null,
@@ -240,9 +249,10 @@ app.get('/auth/status', async (req, res) => {
   }
 
   try {
-    const user = await User.findById(req.session.passport.user)
+    const user = await User.findById(userId)
     if (!user) {
       req.session.destroy(() => {})
+      res.clearCookie('user_id')
       return res.json({
         user: null,
         sessionId: null,
@@ -254,6 +264,11 @@ app.get('/auth/status', async (req, res) => {
 
     user.lastLogin = new Date()
     await user.save()
+
+    if (!req.session.passport) {
+      req.session.passport = { user: user._id }
+      await new Promise(resolve => req.session.save(resolve))
+    }
 
     res.json({
       user,
