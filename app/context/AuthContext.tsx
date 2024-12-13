@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Checking auth status...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
+        method: 'GET',
         credentials: 'include',
         headers: {
           'Accept': 'application/json',

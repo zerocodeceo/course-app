@@ -103,12 +103,13 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
+  resave: true,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
-    autoRemove: 'native'
+    autoRemove: 'native',
+    touchAfter: 24 * 3600
   }),
   name: 'sid',
   cookie: {
@@ -116,8 +117,10 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
-  }
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined
+  },
+  proxy: true
 }))
 
 app.use((req, res, next) => {
@@ -199,10 +202,6 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   function(req, res, next) {
     passport.authenticate('google', function(err, user, info) {
-      console.log('Auth callback - Error:', err)
-      console.log('Auth callback - User:', user)
-      console.log('Auth callback - Info:', info)
-      
       if (err) { 
         console.error('Authentication error:', err)
         return res.redirect(`${process.env.CLIENT_URL}/login?error=${encodeURIComponent(err.message)}`)
@@ -212,21 +211,39 @@ app.get('/auth/google/callback',
         console.error('No user returned')
         return res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`)
       }
-      
-      req.logIn(user, function(err) {
-        if (err) {
-          console.error('Login error:', err)
-          return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`)
-        }
-        
-        // Save session explicitly
-        req.session.save((err) => {
+
+      User.findByIdAndUpdate(user._id, {
+        lastLogin: new Date()
+      }).then(() => {
+        req.logIn(user, function(err) {
           if (err) {
-            console.error('Session save error:', err)
-            return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
+            console.error('Login error:', err)
+            return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`)
           }
-          res.redirect(process.env.CLIENT_URL)
+
+          const oldSession = req.session
+          req.session.regenerate(function(err) {
+            if (err) {
+              console.error('Session regeneration error:', err)
+              return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
+            }
+
+            Object.assign(req.session, oldSession)
+            
+            req.session.passport = { user: user._id }
+
+            req.session.save(function(err) {
+              if (err) {
+                console.error('Session save error:', err)
+                return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
+              }
+              res.redirect(process.env.CLIENT_URL)
+            })
+          })
         })
+      }).catch(error => {
+        console.error('Error updating last login:', error)
+        res.redirect(`${process.env.CLIENT_URL}/login?error=update_failed`)
       })
     })(req, res, next)
   }
