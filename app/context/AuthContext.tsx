@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const checkAuthStatus = async () => {
+    console.log('Checking auth status...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
@@ -46,13 +47,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       const data = await response.json()
+      console.log('Auth status response:', data)
       
       if (data.user) {
+        console.log('Setting user in context:', data.user._id)
         setUser(data.user)
       } else {
+        console.log('No user found in response, setting null')
         setUser(null)
       }
     } catch (error) {
+      console.error('Error checking auth status:', error)
       setUser(null)
     } finally {
       setLoading(false)
@@ -60,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshUser = async () => {
+    console.log('Refreshing user...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
@@ -70,12 +76,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       const data = await response.json()
+      console.log('Refresh user response:', data)
+      
       if (data.user) {
+        console.log('Setting refreshed user:', data.user._id)
         setUser(data.user)
       } else {
+        console.log('No user found in refresh, setting null')
         setUser(null)
       }
     } catch (error) {
+      console.error('Error refreshing user:', error)
       setUser(null)
     }
   }

@@ -106,10 +106,12 @@ passport.use(new GoogleStrategy({
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
+    console.log('Google Strategy callback - Profile:', profile.id, profile.displayName)
     try {
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
+        console.log('Creating new user for Google ID:', profile.id)
         user = await User.create({
           googleId: profile.id,
           displayName: profile.displayName,
@@ -117,24 +119,32 @@ passport.use(new GoogleStrategy({
           profilePicture: profile.photos[0].value,
           plan: 'basic'
         })
+        console.log('New user created:', user._id)
+      } else {
+        console.log('Existing user found:', user._id)
       }
       
       return cb(null, user)
     } catch (error) {
+      console.error('Error in Google Strategy:', error)
       return cb(error, null)
     }
   }
 ))
 
 passport.serializeUser((user, done) => {
+  console.log('Serializing user:', user._id)
   done(null, user.id)
 })
 
 passport.deserializeUser(async (id, done) => {
+  console.log('Deserializing user ID:', id)
   try {
     const user = await User.findById(id)
+    console.log('Deserialized user found:', user?._id)
     done(null, user)
   } catch (error) {
+    console.error('Error deserializing user:', error)
     done(error, null)
   }
 })
@@ -150,29 +160,41 @@ app.get('/auth/google/callback',
     session: true 
   }),
   async function(req, res) {
+    console.log('Google callback - User:', req.user?._id)
     try {
       // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
+      console.log('Updated last login for user:', req.user._id)
 
       req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
+        if (err) {
+          console.error('Error in req.login:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login`)
+        }
+        console.log('Login successful, redirecting to home')
         res.redirect(process.env.CLIENT_URL)
       })
     } catch (error) {
+      console.error('Error in callback handler:', error)
       res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
+  console.log('Auth status check - Session ID:', req.sessionID)
+  console.log('Auth status check - Is Authenticated:', req.isAuthenticated())
+  console.log('Auth status check - User:', req.user?._id)
+  console.log('Auth status check - Session:', req.session)
+
   if (req.isAuthenticated()) {
     try {
-      // Update last login time when checking status
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
+      console.log('Updated last login in status check')
     } catch (error) {
       console.error('Error updating lastLogin:', error)
     }
