@@ -91,6 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isMobile && window.location.search.includes('mobile=true')) {
       // We've returned from mobile auth, check status immediately
       checkAuthStatus();
+    } else {
+      // Always check auth status on mount for non-mobile or non-redirect cases
+      checkAuthStatus();
     }
   }, []);
 

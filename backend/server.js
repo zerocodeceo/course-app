@@ -92,15 +92,12 @@ app.use(express.json())
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
     autoRemove: 'native',
-    touchAfter: 24 * 3600,
-    crypto: {
-      secret: process.env.SESSION_SECRET
-    }
+    touchAfter: 24 * 3600
   }),
   name: 'sid',
   cookie: {
@@ -169,30 +166,28 @@ passport.deserializeUser(async (id, done) => {
 // Routes
 app.get('/auth/google',
   (req, res, next) => {
-    // Store the user agent to detect mobile
-    req.session.userAgent = req.headers['user-agent'];
-    next();
-  },
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    // Force consent screen to ensure proper mobile flow
-    prompt: 'consent',
-    // Add mobile-friendly options
-    display: 'touch'
-  })
-)
+    try {
+      passport.authenticate('google', { 
+        scope: ['profile', 'email'],
+        prompt: 'select_account'
+      })(req, res, next);
+    } catch (error) {
+      console.error('Auth error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login`);
+    }
+  }
+);
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true,
-    failureMessage: true
-  }),
-  async function(req, res) {
+  (req, res, next) => {
+    passport.authenticate('google', { 
+      failureRedirect: `${process.env.CLIENT_URL}/login`,
+      session: true,
+      failureMessage: true
+    })(req, res, next);
+  },
+  async (req, res) => {
     try {
-      console.log('Google callback - user:', req.user?._id);
-      console.log('User Agent:', req.session?.userAgent);
-      
       if (!req.user) {
         console.error('No user in callback');
         return res.redirect(`${process.env.CLIENT_URL}/login`);
@@ -202,20 +197,7 @@ app.get('/auth/google/callback',
         lastLogin: new Date()
       });
 
-      // Ensure session is saved before redirect
-      req.session.userId = req.user._id;
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.redirect(`${process.env.CLIENT_URL}/login`);
-        }
-
-        // Use different redirect strategies based on user agent
-        const isMobile = /mobile/i.test(req.session?.userAgent);
-        const redirectUrl = `${process.env.CLIENT_URL}${isMobile ? '?mobile=true' : ''}`;
-        
-        res.redirect(redirectUrl);
-      });
+      res.redirect(process.env.CLIENT_URL);
     } catch (error) {
       console.error('Callback error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login`);
@@ -716,17 +698,26 @@ app.get('/auth/check-progress', (req, res) => {
   });
 });
 
-// Error handler should be after routes but before app.listen
-app.use((err, req, res, ) => {
-  console.error('Global error handler:', err)
+// Add this before the error handler
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+
+// Update the error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err);
+  
   if (err.name === 'AuthenticationError') {
-    return res.redirect(`${process.env.CLIENT_URL}/login`)
+    return res.redirect(`${process.env.CLIENT_URL}/login`);
   }
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  })
-})
+  
+  // Don't expose error details in production
+  const message = process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error';
+  
+  res.status(err.status || 500).json({
+    error: message
+  });
+});
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
