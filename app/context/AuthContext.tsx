@@ -37,30 +37,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status...');
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
-      });
+      })
       
-      const data = await response.json();
-      console.log('Auth status response:', data);
+      const data = await response.json()
       
       if (data.user) {
-        setUser(data.user);
+        setUser(data.user)
       } else {
-        setUser(null);
+        setUser(null)
       }
     } catch (error) {
-      console.error('Auth status check error:', error);
-      setUser(null);
+      setUser(null)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const refreshUser = async () => {
     try {
