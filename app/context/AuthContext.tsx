@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuthStatus = async () => {
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
-        method: 'GET',
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
@@ -46,17 +45,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
-      
       const data = await response.json()
-      setUser(data.user)
+      
+      if (data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
     } catch (error) {
-      console.error('Error checking auth status:', error)
       setUser(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const refreshUser = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/status`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      const data = await response.json()
+      if (data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      setUser(null)
     }
   }
 
@@ -65,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser: checkAuthStatus }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -63,10 +63,23 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 })
 
 app.use(express.json())
+app.use(cors({
+  origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Set-Cookie']
+}))
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
+  next();
+})
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: true,
+  resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
@@ -82,11 +95,6 @@ app.use(session({
   }
 }))
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true')
-  next()
-})
-
 app.use(passport.initialize())
 app.use(passport.session())
 
@@ -99,56 +107,41 @@ passport.use(new GoogleStrategy({
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
-      console.log('Full Google profile:', JSON.stringify(profile, null, 2))
-      
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
-        if (!profile.emails?.[0]?.value) {
-          console.error('No email found in profile')
-          return cb(new Error('No email provided'), null)
-        }
-        
         user = await User.create({
           googleId: profile.id,
           displayName: profile.displayName,
           email: profile.emails[0].value,
-          profilePicture: profile.photos?.[0]?.value || '',
+          profilePicture: profile.photos[0].value,
           plan: 'basic'
         })
       }
       
       return cb(null, user)
     } catch (error) {
-      console.error('Error in Google Strategy:', error)
       return cb(error, null)
     }
   }
 ))
 
 passport.serializeUser((user, done) => {
-  console.log('Serializing user:', user._id)
   done(null, user.id)
 })
 
 passport.deserializeUser(async (id, done) => {
-  console.log('Deserializing user ID:', id)
   try {
     const user = await User.findById(id)
-    console.log('Deserialized user found:', user?._id)
     done(null, user)
   } catch (error) {
-    console.error('Error deserializing user:', error)
     done(error, null)
   }
 })
 
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'
-  })
+  passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
 app.get('/auth/google/callback', 
@@ -158,36 +151,25 @@ app.get('/auth/google/callback',
   }),
   async function(req, res) {
     try {
-      // Update last login
+      // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      // Save session explicitly
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err)
-          return res.redirect(`${process.env.CLIENT_URL}/login`)
-        }
+      req.login(req.user, (err) => {
+        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
         res.redirect(process.env.CLIENT_URL)
       })
     } catch (error) {
-      console.error('Error in callback:', error)
       res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  console.log('Auth status check:', {
-    sessionID: req.sessionID,
-    hasSession: !!req.session,
-    hasPassport: !!req.session?.passport,
-    user: req.user?._id
-  })
-
   if (req.isAuthenticated()) {
     try {
+      // Update last login time when checking status
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
@@ -208,14 +190,9 @@ app.get('/auth/status', async (req, res) => {
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
-      console.error('Logout error:', err)
+      return res.status(500).json({ error: 'Error logging out' })
     }
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Session destroy error:', err)
-      }
-      res.redirect(process.env.CLIENT_URL)
-    })
+    res.redirect(process.env.CLIENT_URL)
   })
 })
 
@@ -652,22 +629,6 @@ app.post('/update-location', async (req, res) => {
     res.json({ success: true })
   } catch (error) {
     res.status(500).json({ error: 'Failed to update location' })
-  }
-})
-
-app.post('/cleanup-sessions', async (req, res) => {
-  if (!req.user || req.user.email !== 'bbertapeli@gmail.com') {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
-  try {
-    // Cast to MongoStore without TypeScript syntax
-    const store = Object.assign(req.sessionStore)
-    await store.clear()
-    res.json({ success: true, message: 'Sessions cleared' })
-  } catch (error) {
-    console.error('Error clearing sessions:', error)
-    res.status(500).json({ error: 'Failed to clear sessions' })
   }
 })
 
