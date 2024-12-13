@@ -64,7 +64,21 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
 // 1. CORS first
 app.use(cors({
-  origin: ['https://zerocodeceo.com', 'https://www.zerocodeceo.com', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://zerocodeceo.com',
+      'https://www.zerocodeceo.com',
+      'http://localhost:3000'
+    ];
+    
+    // Allow requests with no origin (like mobile apps)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.error('Not allowed by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
@@ -81,7 +95,8 @@ app.use(session({
   saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native'
   }),
   name: 'sid',
   cookie: {
@@ -89,7 +104,8 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined
   }
 }))
 
@@ -161,11 +177,23 @@ app.get('/auth/google/callback',
     try {
       console.log('Google callback - user:', req.user?._id)
       
+      if (!req.user) {
+        console.error('No user in callback')
+        return res.redirect(`${process.env.CLIENT_URL}/login`)
+      }
+
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      res.redirect(process.env.CLIENT_URL)
+      // Explicitly save session before redirect
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login`)
+        }
+        res.redirect(process.env.CLIENT_URL)
+      })
     } catch (error) {
       console.error('Callback error:', error)
       res.redirect(`${process.env.CLIENT_URL}/login`)
@@ -175,8 +203,13 @@ app.get('/auth/google/callback',
 
 app.get('/auth/status', async (req, res) => {
   console.log('Auth Status Check:');
-  console.log('Session:', req.session);
-  console.log('User:', req.user);
+  console.log('Session ID:', req.sessionID);
+  console.log('Session:', {
+    ...req.session,
+    cookie: req.session?.cookie?.toJSON()
+  });
+  console.log('User:', req.user?._id);
+  console.log('Headers:', req.headers);
   console.log('Is Authenticated:', req.isAuthenticated());
 
   if (req.isAuthenticated()) {
