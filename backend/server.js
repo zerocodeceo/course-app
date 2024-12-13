@@ -143,22 +143,24 @@ passport.use(new GoogleStrategy({
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
-    console.log('Google Strategy callback - Profile:', profile.id, profile.displayName)
     try {
+      console.log('Full Google profile:', JSON.stringify(profile, null, 2))
+      
       let user = await User.findOne({ googleId: profile.id })
       
       if (!user) {
-        console.log('Creating new user for Google ID:', profile.id)
+        if (!profile.emails?.[0]?.value) {
+          console.error('No email found in profile')
+          return cb(new Error('No email provided'), null)
+        }
+        
         user = await User.create({
           googleId: profile.id,
           displayName: profile.displayName,
           email: profile.emails[0].value,
-          profilePicture: profile.photos[0].value,
+          profilePicture: profile.photos?.[0]?.value || '',
           plan: 'basic'
         })
-        console.log('New user created:', user._id)
-      } else {
-        console.log('Existing user found:', user._id)
       }
       
       return cb(null, user)
@@ -188,33 +190,45 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account'
+  })
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
-  }),
-  async function(req, res) {
-    try {
-      // Update last login time
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      })
-
-      // Save the session before redirecting
-      req.session.save((err) => {
+  function(req, res, next) {
+    passport.authenticate('google', function(err, user, info) {
+      console.log('Auth callback - Error:', err)
+      console.log('Auth callback - User:', user)
+      console.log('Auth callback - Info:', info)
+      
+      if (err) { 
+        console.error('Authentication error:', err)
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=${encodeURIComponent(err.message)}`)
+      }
+      
+      if (!user) { 
+        console.error('No user returned')
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`)
+      }
+      
+      req.logIn(user, function(err) {
         if (err) {
-          console.error('Error saving session:', err)
-          return res.redirect(`${process.env.CLIENT_URL}/login`)
+          console.error('Login error:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`)
         }
-        res.redirect(process.env.CLIENT_URL)
+        
+        // Save session explicitly
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err)
+            return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
+          }
+          res.redirect(process.env.CLIENT_URL)
+        })
       })
-    } catch (error) {
-      console.error('Error in callback handler:', error)
-      res.redirect(`${process.env.CLIENT_URL}/login`)
-    }
+    })(req, res, next)
   }
 )
 
