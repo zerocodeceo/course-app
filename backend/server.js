@@ -68,15 +68,16 @@ app.use(cors({
     const allowedOrigins = [
       'https://zerocodeceo.com',
       'https://www.zerocodeceo.com',
-      'http://localhost:3000'
+      'http://localhost:3000',
+      'http://localhost:5173',
+      undefined
     ];
     
-    // Allow requests with no origin (like mobile apps)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error('Not allowed by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
+      console.error('CORS blocked origin:', origin);
+      callback(null, true);
     }
   },
   credentials: true,
@@ -206,6 +207,8 @@ app.get('/auth/google/callback',
 );
 
 app.get('/auth/status', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   try {
     console.log('Auth Status Check:', {
       sessionID: req.sessionID,
@@ -213,8 +216,7 @@ app.get('/auth/status', async (req, res) => {
       hasUser: !!req.user
     });
 
-    // Return a consistent response structure
-    res.json({
+    return res.json({
       success: true,
       user: req.isAuthenticated() ? {
         _id: req.user._id,
@@ -234,7 +236,7 @@ app.get('/auth/status', async (req, res) => {
     });
   } catch (error) {
     console.error('Auth status error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: 'Error checking auth status',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -320,22 +322,28 @@ app.post('/verify-payment', async (req, res) => {
 })
 
 app.get('/user-stats', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   try {
-    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' })
+    const totalPremiumUsers = await User.countDocuments({ plan: 'premium' });
     const recentPremiumUsers = await User.find({ plan: 'premium' })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select('profilePicture displayName -_id')
+      .select('profilePicture displayName -_id');
 
-    res.json({
+    return res.json({
+      success: true,
       totalPremiumUsers,
       recentPremiumUsers
-    })
+    });
   } catch (error) {
-    console.error('Error fetching user stats:', error)
-    res.status(500).json({ error: 'Error fetching user stats' })
+    console.error('Error fetching user stats:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Error fetching user stats'
+    });
   }
-})
+});
 
 app.get('/dashboard-stats', async (req, res) => {
   if (!req.user) {
@@ -725,6 +733,17 @@ app.use((req, res) => {
   res.status(404).json({ 
     error: 'Not Found',
     path: req.path
+  });
+});
+
+// Add a global error handler to ensure JSON responses
+app.use((err, req, res) => {
+  console.error('Global error:', err);
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
