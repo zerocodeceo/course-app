@@ -92,11 +92,15 @@ app.use(express.json())
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: true,
-  saveUninitialized: true,
+  saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
-    autoRemove: 'native'
+    autoRemove: 'native',
+    touchAfter: 24 * 3600,
+    crypto: {
+      secret: process.env.SESSION_SECRET
+    }
   }),
   name: 'sid',
   cookie: {
@@ -104,8 +108,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined
+    path: '/'
   }
 }))
 
@@ -182,17 +185,29 @@ app.get('/auth/google/callback',
         return res.redirect(`${process.env.CLIENT_URL}/login`)
       }
 
+      // First update the user
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      // Explicitly save session before redirect
+      // Then ensure the session is properly set
+      req.session.userId = req.user._id
+      
+      // Save session first
       req.session.save((err) => {
         if (err) {
           console.error('Session save error:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login`)
         }
-        res.redirect(process.env.CLIENT_URL)
+        
+        // Then login
+        req.login(req.user, (loginErr) => {
+          if (loginErr) {
+            console.error('Login error:', loginErr)
+            return res.redirect(`${process.env.CLIENT_URL}/login`)
+          }
+          res.redirect(process.env.CLIENT_URL)
+        })
       })
     } catch (error) {
       console.error('Callback error:', error)
@@ -204,31 +219,41 @@ app.get('/auth/google/callback',
 app.get('/auth/status', async (req, res) => {
   console.log('Auth Status Check:');
   console.log('Session ID:', req.sessionID);
-  console.log('Session:', {
-    ...req.session,
-    cookie: req.session?.cookie?.toJSON()
-  });
-  console.log('User:', req.user?._id);
-  console.log('Headers:', req.headers);
+  console.log('Session:', req.session);
+  console.log('User ID in session:', req.session?.userId);
+  console.log('User in request:', req.user?._id);
   console.log('Is Authenticated:', req.isAuthenticated());
 
-  if (req.isAuthenticated()) {
-    try {
+  try {
+    // If we have a userId in session but no user object, try to restore it
+    if (req.session?.userId && !req.user) {
+      const user = await User.findById(req.session.userId);
+      if (user) {
+        req.login(user, (err) => {
+          if (err) {
+            console.error('Error restoring user session:', err);
+          }
+        });
+      }
+    }
+
+    if (req.isAuthenticated()) {
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       });
-    } catch (error) {
-      console.error('Error updating lastLogin:', error);
     }
-  }
 
-  res.json({
-    user: req.isAuthenticated() ? req.user : null,
-    sessionId: req.sessionID,
-    sessionExists: !!req.session,
-    hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated()
-  });
+    res.json({
+      user: req.isAuthenticated() ? req.user : null,
+      sessionId: req.sessionID,
+      sessionExists: !!req.session,
+      hasUser: !!req.user,
+      isAuthenticated: req.isAuthenticated()
+    });
+  } catch (error) {
+    console.error('Auth status error:', error);
+    res.status(500).json({ error: 'Error checking auth status' });
+  }
 })
 
 app.get('/auth/logout', (req, res) => {
