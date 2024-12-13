@@ -103,13 +103,13 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: true,
+  resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
     autoRemove: 'native',
-    touchAfter: 24 * 3600
+    autoRemoveInterval: 10
   }),
   name: 'sid',
   cookie: {
@@ -117,10 +117,8 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined
-  },
-  proxy: true
+    path: '/'
+  }
 }))
 
 app.use((req, res, next) => {
@@ -200,92 +198,84 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  function(req, res, next) {
-    passport.authenticate('google', function(err, user, info) {
-      if (err) { 
-        console.error('Authentication error:', err)
-        return res.redirect(`${process.env.CLIENT_URL}/login?error=${encodeURIComponent(err.message)}`)
-      }
-      
-      if (!user) { 
-        console.error('No user returned')
-        return res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`)
-      }
+  passport.authenticate('google', { 
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
+    session: true 
+  }),
+  async function(req, res) {
+    if (!req.user) {
+      return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`)
+    }
 
-      User.findByIdAndUpdate(user._id, {
+    try {
+      // Update last login time
+      await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      }).then(() => {
-        req.logIn(user, function(err) {
-          if (err) {
-            console.error('Login error:', err)
-            return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`)
-          }
-
-          const oldSession = req.session
-          req.session.regenerate(function(err) {
-            if (err) {
-              console.error('Session regeneration error:', err)
-              return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
-            }
-
-            Object.assign(req.session, oldSession)
-            
-            req.session.passport = { user: user._id }
-
-            req.session.save(function(err) {
-              if (err) {
-                console.error('Session save error:', err)
-                return res.redirect(`${process.env.CLIENT_URL}/login?error=session_failed`)
-              }
-              res.redirect(process.env.CLIENT_URL)
-            })
-          })
-        })
-      }).catch(error => {
-        console.error('Error updating last login:', error)
-        res.redirect(`${process.env.CLIENT_URL}/login?error=update_failed`)
       })
-    })(req, res, next)
+
+      // Ensure we have a clean session
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err)
+          return res.redirect(`${process.env.CLIENT_URL}/login?error=session`)
+        }
+
+        // Set the user in the session
+        req.session.passport = { user: req.user._id }
+        
+        // Save the session before redirecting
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err)
+            return res.redirect(`${process.env.CLIENT_URL}/login?error=save`)
+          }
+          res.redirect(process.env.CLIENT_URL)
+        })
+      })
+    } catch (error) {
+      console.error('Error in callback:', error)
+      res.redirect(`${process.env.CLIENT_URL}/login?error=server`)
+    }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  if (!req.session || !req.session.passport) {
+  if (!req.sessionID || !req.session?.passport?.user) {
     return res.json({
       user: null,
-      sessionId: req.sessionID,
+      sessionId: null,
       sessionExists: false,
       hasUser: false,
       isAuthenticated: false
     })
   }
 
-  if (req.isAuthenticated()) {
-    try {
-      const user = await User.findByIdAndUpdate(
-        req.user._id,
-        { lastLogin: new Date() },
-        { new: true }
-      )
-      res.json({
-        user,
-        sessionId: req.sessionID,
-        sessionExists: true,
-        hasUser: true,
-        isAuthenticated: true
+  try {
+    const user = await User.findById(req.session.passport.user)
+    if (!user) {
+      req.session.destroy(() => {})
+      return res.json({
+        user: null,
+        sessionId: null,
+        sessionExists: false,
+        hasUser: false,
+        isAuthenticated: false
       })
-    } catch (error) {
-      console.error('Error updating lastLogin:', error)
-      res.status(500).json({ error: 'Error updating user' })
     }
-  } else {
+
+    user.lastLogin = new Date()
+    await user.save()
+
     res.json({
-      user: null,
+      user,
       sessionId: req.sessionID,
       sessionExists: true,
-      hasUser: false,
-      isAuthenticated: false
+      hasUser: true,
+      isAuthenticated: true
     })
+  } catch (error) {
+    console.error('Auth status error:', error)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 
@@ -731,6 +721,22 @@ app.post('/update-location', async (req, res) => {
     res.json({ success: true })
   } catch (error) {
     res.status(500).json({ error: 'Failed to update location' })
+  }
+})
+
+app.post('/cleanup-sessions', async (req, res) => {
+  if (!req.user || req.user.email !== 'bbertapeli@gmail.com') {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  try {
+    // Cast to MongoStore without TypeScript syntax
+    const store = Object.assign(req.sessionStore)
+    await store.clear()
+    res.json({ success: true, message: 'Sessions cleared' })
+  } catch (error) {
+    console.error('Error clearing sessions:', error)
+    res.status(500).json({ error: 'Failed to clear sessions' })
   }
 })
 

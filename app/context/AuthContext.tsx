@@ -44,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setLastCheck(now)
 
-    console.log('Checking auth status...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         method: 'GET',
@@ -60,12 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       const data = await response.json()
-      
-      if (data.user) {
-        setUser(data.user)
-      } else {
-        setUser(null)
-      }
+      setUser(data.user)
     } catch (error) {
       console.error('Error checking auth status:', error)
       setUser(null)
