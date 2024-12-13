@@ -79,11 +79,13 @@ app.use((req, res, next) => {
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+    touchAfter: 24 * 3600
   }),
   name: 'sid',
   cookie: {
@@ -103,28 +105,34 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
-    proxy: true
+    proxy: true,
+    passReqToCallback: true,
+    userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo'
   },
-  async function(accessToken, refreshToken, profile, cb) {
+  async function(req, accessToken, refreshToken, profile, cb) {
     try {
-      let user = await User.findOne({ googleId: profile.id })
+      console.log('Google Strategy - Processing profile:', profile.id);
+      
+      let user = await User.findOne({ googleId: profile.id });
       
       if (!user) {
+        console.log('Creating new user for Google ID:', profile.id);
         user = await User.create({
           googleId: profile.id,
           displayName: profile.displayName,
           email: profile.emails[0].value,
           profilePicture: profile.photos[0].value,
           plan: 'basic'
-        })
+        });
       }
       
-      return cb(null, user)
+      return cb(null, user);
     } catch (error) {
-      return cb(error, null)
+      console.error('Google Strategy error:', error);
+      return cb(error, null);
     }
   }
-))
+));
 
 passport.serializeUser((user, done) => {
   done(null, user.id)
@@ -147,21 +155,39 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
+    session: true,
+    failureMessage: true
   }),
   async function(req, res) {
     try {
-      // Update last login time
+      console.log('Google auth callback - User:', req.user?._id);
+      
+      if (!req.user) {
+        console.error('No user object in request after Google auth');
+        return res.redirect(`${process.env.CLIENT_URL}/login`);
+      }
+
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
 
-      req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        res.redirect(process.env.CLIENT_URL)
-      })
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.redirect(`${process.env.CLIENT_URL}/login`);
+        }
+
+        req.login(req.user, (loginErr) => {
+          if (loginErr) {
+            console.error('Login error:', loginErr);
+            return res.redirect(`${process.env.CLIENT_URL}/login`);
+          }
+          res.redirect(process.env.CLIENT_URL);
+        });
+      });
     } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL}/login`)
+      console.error('Google callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login`);
     }
   }
 )
@@ -635,4 +661,19 @@ app.post('/update-location', async (req, res) => {
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
-}) 
+})
+
+app.use((err, req, res) => {
+  console.error('Global error handler:', err);
+  
+  // Handle session errors
+  if (err.name === 'AuthenticationError') {
+    return res.redirect(`${process.env.CLIENT_URL}/login`);
+  }
+  
+  // Handle other errors
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+}); 
