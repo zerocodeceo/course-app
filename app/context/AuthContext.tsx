@@ -37,13 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [lastCheck, setLastCheck] = useState(0)
 
   const checkAuthStatus = async () => {
-    // Prevent multiple checks within 1 second
-    const now = Date.now()
-    if (now - lastCheck < 1000) {
-      return
-    }
-    setLastCheck(now)
-
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         method: 'GET',

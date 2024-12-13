@@ -72,7 +72,9 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
@@ -103,13 +105,12 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
+  resave: true,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60,
-    autoRemove: 'native',
-    autoRemoveInterval: 10
+    autoRemove: 'native'
   }),
   name: 'sid',
   cookie: {
@@ -208,29 +209,16 @@ app.get('/auth/google/callback',
     }
 
     try {
-      // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
-      // Ensure we have a clean session
-      req.session.regenerate((err) => {
+      req.session.save((err) => {
         if (err) {
-          console.error('Session regeneration error:', err)
+          console.error('Session save error:', err)
           return res.redirect(`${process.env.CLIENT_URL}/login?error=session`)
         }
-
-        // Set the user in the session
-        req.session.passport = { user: req.user._id }
-        
-        // Save the session before redirecting
-        req.session.save((err) => {
-          if (err) {
-            console.error('Session save error:', err)
-            return res.redirect(`${process.env.CLIENT_URL}/login?error=save`)
-          }
-          res.redirect(process.env.CLIENT_URL)
-        })
+        res.redirect(process.env.CLIENT_URL)
       })
     } catch (error) {
       console.error('Error in callback:', error)
