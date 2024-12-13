@@ -51,6 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (data.user) {
         setUser(data.user);
+        if (window.location.search.includes('mobile=true')) {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
       } else {
         setUser(null);
       }
@@ -83,9 +86,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const handleLogin = async () => {
+    const isMobile = /mobile/i.test(window.navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile, open in same window
+      window.location.href = `${API_URL}/auth/google`;
+    } else {
+      // For desktop, open in popup
+      const width = 500;
+      const height = 600;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      window.open(
+        `${API_URL}/auth/google`,
+        'Google Login',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+    }
+  };
+
   useEffect(() => {
-    checkAuthStatus()
-  }, [])
+    const isMobile = /mobile/i.test(window.navigator.userAgent);
+    if (isMobile && window.location.search.includes('mobile=true')) {
+      // We've returned from mobile auth, check status immediately
+      checkAuthStatus();
+    }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>

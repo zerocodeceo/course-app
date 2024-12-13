@@ -168,53 +168,60 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  (req, res, next) => {
+    // Store the user agent to detect mobile
+    req.session.userAgent = req.headers['user-agent'];
+    next();
+  },
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    // Force consent screen to ensure proper mobile flow
+    prompt: 'consent',
+    // Add mobile-friendly options
+    display: 'touch'
+  })
 )
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
     failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true
+    session: true,
+    failureMessage: true
   }),
   async function(req, res) {
     try {
-      console.log('Google callback - user:', req.user?._id)
+      console.log('Google callback - user:', req.user?._id);
+      console.log('User Agent:', req.session?.userAgent);
       
       if (!req.user) {
-        console.error('No user in callback')
-        return res.redirect(`${process.env.CLIENT_URL}/login`)
+        console.error('No user in callback');
+        return res.redirect(`${process.env.CLIENT_URL}/login`);
       }
 
-      // First update the user
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
 
-      // Then ensure the session is properly set
-      req.session.userId = req.user._id
-      
-      // Save session first
+      // Ensure session is saved before redirect
+      req.session.userId = req.user._id;
       req.session.save((err) => {
         if (err) {
-          console.error('Session save error:', err)
-          return res.redirect(`${process.env.CLIENT_URL}/login`)
+          console.error('Session save error:', err);
+          return res.redirect(`${process.env.CLIENT_URL}/login`);
         }
+
+        // Use different redirect strategies based on user agent
+        const isMobile = /mobile/i.test(req.session?.userAgent);
+        const redirectUrl = `${process.env.CLIENT_URL}${isMobile ? '?mobile=true' : ''}`;
         
-        // Then login
-        req.login(req.user, (loginErr) => {
-          if (loginErr) {
-            console.error('Login error:', loginErr)
-            return res.redirect(`${process.env.CLIENT_URL}/login`)
-          }
-          res.redirect(process.env.CLIENT_URL)
-        })
-      })
+        res.redirect(redirectUrl);
+      });
     } catch (error) {
-      console.error('Callback error:', error)
-      res.redirect(`${process.env.CLIENT_URL}/login`)
+      console.error('Callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login`);
     }
   }
-)
+);
 
 app.get('/auth/status', async (req, res) => {
   console.log('Auth Status Check:');
@@ -700,6 +707,14 @@ app.post('/update-location', async (req, res) => {
     res.status(500).json({ error: 'Failed to update location' })
   }
 })
+
+app.get('/auth/check-progress', (req, res) => {
+  res.json({
+    inProgress: !!req.session?.passport?.oauth2,
+    sessionExists: !!req.session,
+    isAuthenticated: req.isAuthenticated()
+  });
+});
 
 // Error handler should be after routes but before app.listen
 app.use((err, req, res, next) => {
