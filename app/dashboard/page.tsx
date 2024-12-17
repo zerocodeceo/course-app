@@ -91,6 +91,14 @@ export default function Dashboard() {
 
   const calculatedStats = calculateStats(stats)
 
+  const handleStartNow = () => {
+    if (!user) {
+      window.location.href = `${API_URL}/auth/google`
+      return
+    }
+    handleUpgrade()
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -369,10 +377,10 @@ export default function Dashboard() {
                                   <h3 className="font-semibold mb-2">Premium Content</h3>
                                   <p className="text-sm text-gray-300 mb-4">Upgrade to access all course content</p>
                                   <Button
-                                    onClick={handleUpgrade}
+                                    onClick={handleStartNow}
                                     className="bg-purple-600 hover:bg-purple-700"
                                   >
-                                    Upgrade to Premium
+                                    Start Now
                                   </Button>
                                 </div>
                                 <div className="aspect-video max-w-2xl mx-auto">
@@ -426,10 +434,10 @@ export default function Dashboard() {
                     Upgrade to Premium to access additional learning modules and advanced topics
                   </p>
                   <Button
-                    onClick={handleUpgrade}
+                    onClick={handleStartNow}
                     className="bg-purple-600 hover:bg-purple-700"
                   >
-                    Upgrade Now
+                    Start Now
                   </Button>
                 </div>
               )}

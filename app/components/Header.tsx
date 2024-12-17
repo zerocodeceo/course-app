@@ -135,10 +135,10 @@ export function Header() {
           </div>
         ) : (
           <Button 
-            onClick={handleLogin}
+            onClick={() => handleNavigation('/dashboard')}
             className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
           >
-            Login
+            Dashboard
           </Button>
         )}
       </div>

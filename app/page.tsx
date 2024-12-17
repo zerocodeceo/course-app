@@ -90,13 +90,10 @@ export default function Home() {
 
           <div className="animate-fade-in-up animation-delay-400">
             <Button 
-              onClick={!user ? handleLogin : user.plan === 'premium' ? handleDashboard : handleUpgrade}
-              className={`px-8 py-6 text-lg mb-8 transition-transform hover:scale-105 active:scale-95 ${
-                user?.plan === 'premium' ? 'bg-green-600 hover:bg-green-700' : 'bg-purple-600 hover:bg-purple-700'
-              }`}
+              onClick={() => router.push('/dashboard')}
+              className="px-8 py-6 text-lg mb-8 transition-transform hover:scale-105 active:scale-95 bg-purple-600 hover:bg-purple-700"
             >
-              {!user ? 'Start Building Your App Today' : 
-               user.plan === 'premium' ? 'Access Dashboard' : 'Start Now'}
+              Start Building Your App Today
             </Button>
           </div>
 
