@@ -219,12 +219,6 @@ export default function Dashboard() {
   }
 
   const handleUpgrade = async () => {
-    if (!user) {
-      // If user is not logged in, redirect to login first
-      window.location.href = `${API_URL}/auth/google`
-      return
-    }
-
     try {
       const response = await fetch(`${API_URL}/create-checkout-session`, {
         method: 'POST',
