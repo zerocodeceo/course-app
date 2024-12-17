@@ -16,6 +16,7 @@ import { AnimatedNumber } from '../components/AnimatedNumber'
 import { CourseProgress } from '../components/CourseProgress'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
+import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
 import { calculateStats } from '../lib/statsCalculator'
 
@@ -90,19 +91,16 @@ export default function Dashboard() {
 
   const calculatedStats = calculateStats(stats)
 
-  const handleStartNow = () => {
-    if (!user) {
-      window.location.href = `${API_URL}/auth/google`
-      return
-    }
-    handleUpgrade()
-  }
-
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
+    if (!user) {
+      router.push('/')
+      return
+    }
+
     // Fetch dashboard data for all users
     const fetchDashboardData = async () => {
       try {
@@ -132,7 +130,7 @@ export default function Dashboard() {
       }
     }
     fetchCourseContent()
-  }, [])
+  }, [user, router])
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -177,17 +175,15 @@ export default function Dashboard() {
 
   // Update getChartData to use calculated stats
   const getChartData = () => {
-    if (!mounted || !calculatedStats?.chartData) return []
+    if (!mounted || !calculatedStats.chartData) return []
 
-    const data = calculatedStats.chartData || []
-    
     switch (timeframe) {
       case 'today':
-        return data.slice(-1)
+        return calculatedStats.chartData.slice(-1)
       case 'week':
-        return data.slice(-7)
+        return calculatedStats.chartData.slice(-7)
       default: // year
-        return data
+        return calculatedStats.chartData
     }
   }
 
@@ -291,6 +287,8 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
+      <AnimatedBackground />
+      
       <div className="container mx-auto">
         <Tabs defaultValue="course" className="w-full">
           <TabsList className="grid w-full grid-cols-3 max-w-[600px] bg-white/80 backdrop-blur-sm shadow rounded-lg">
@@ -370,28 +368,36 @@ export default function Dashboard() {
                               </div>
                             ) : null}
                             
-                            {!user || user?.plan === 'basic' ? (
-                              <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center text-white">
-                                <Lock className="w-8 h-8 mb-2" />
-                                <h3 className="font-semibold mb-2">Premium Content</h3>
-                                <p className="text-sm text-gray-300 mb-4">
-                                  {!user ? 'Login to access course content' : 'Upgrade to access all course content'}
-                                </p>
-                                <Button
-                                  onClick={handleStartNow}
-                                  className="bg-purple-600 hover:bg-purple-700"
-                                >
-                                  Start Now
-                                </Button>
+                            {user?.plan === 'basic' && content.id !== '1' ? (
+                              <div className="aspect-video max-w-2xl mx-auto relative">
+                                <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center text-white">
+                                  <Lock className="w-8 h-8 mb-2" />
+                                  <h3 className="font-semibold mb-2">Premium Content</h3>
+                                  <p className="text-sm text-gray-300 mb-4">Upgrade to access all course content</p>
+                                  <Button
+                                    onClick={handleUpgrade}
+                                    className="bg-purple-600 hover:bg-purple-700"
+                                  >
+                                    Upgrade to Premium
+                                  </Button>
+                                </div>
+                                <div className="aspect-video max-w-2xl mx-auto">
+                                  <VideoPlayer
+                                    videoUrl={content.videoUrl}
+                                    initialProgress={progress.watchedDurations?.[content.id] || 0}
+                                    onProgress={(progress) => handleVideoProgress(content.id, progress)}
+                                  />
+                                </div>
                               </div>
-                            ) : null}
-                            <div className="aspect-video max-w-2xl mx-auto">
-                              <VideoPlayer
-                                videoUrl={content.videoUrl}
-                                initialProgress={progress.watchedDurations?.[content.id] || 0}
-                                onProgress={(progress) => handleVideoProgress(content.id, progress)}
-                              />
-                            </div>
+                            ) : (
+                              <div className="aspect-video max-w-2xl mx-auto">
+                                <VideoPlayer
+                                  videoUrl={content.videoUrl}
+                                  initialProgress={progress.watchedDurations?.[content.id] || 0}
+                                  onProgress={(progress) => handleVideoProgress(content.id, progress)}
+                                />
+                              </div>
+                            )}
                             <div className="bg-gray-50 p-4 rounded-lg">
                               <h4 className="font-semibold mb-2">Module Description:</h4>
                               <p className="text-gray-600">{content.description}</p>
@@ -426,10 +432,10 @@ export default function Dashboard() {
                     Upgrade to Premium to access additional learning modules and advanced topics
                   </p>
                   <Button
-                    onClick={handleStartNow}
+                    onClick={handleUpgrade}
                     className="bg-purple-600 hover:bg-purple-700"
                   >
-                    Start Now
+                    Upgrade Now
                   </Button>
                 </div>
               )}
@@ -574,7 +580,7 @@ export default function Dashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <DynamicWorldMap markers={stats.visitorLocations || []} />
+                      <DynamicWorldMap markers={stats.visitorLocations} />
                     </CardContent>
                   </Card>
 
