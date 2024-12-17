@@ -16,7 +16,6 @@ import { AnimatedNumber } from '../components/AnimatedNumber'
 import { CourseProgress } from '../components/CourseProgress'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { formatTime } from '../lib/utils'
-import { AnimatedBackground } from '../components/AnimatedBackground'
 import { API_URL } from '../lib/api'
 import { calculateStats } from '../lib/statsCalculator'
 
