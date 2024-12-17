@@ -35,12 +35,11 @@ export function Header() {
   }
 
   const handleNavigation = (path: string) => {
-    router.replace(path)
+    console.log('Navigation triggered to:', path)
+    router.push(path)
   }
 
-  const handleLogin = () => {
-    window.location.replace(`${API_URL}/auth/google`)
-  }
+
 
   const handleUpgrade = async () => {
     try {
@@ -134,6 +133,7 @@ export function Header() {
             </Button>
           </div>
         ) : (
+<<<<<<< HEAD
           <div className="flex items-center gap-2">
             <Button
               onClick={() => handleNavigation('/dashboard')}
@@ -150,6 +150,14 @@ export function Header() {
               Login
             </Button>
           </div>
+=======
+          <Button 
+            onClick={() => handleNavigation('/dashboard')}
+            className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+          >
+            Dashboard
+          </Button>
+>>>>>>> d542620b12c5817e1a235f230b77efc0944bddaf
         )}
       </div>
     </nav>
