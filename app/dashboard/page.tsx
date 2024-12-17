@@ -177,15 +177,17 @@ export default function Dashboard() {
 
   // Update getChartData to use calculated stats
   const getChartData = () => {
-    if (!mounted || !calculatedStats.chartData) return []
+    if (!mounted || !calculatedStats?.chartData) return []
 
+    const data = calculatedStats.chartData || []
+    
     switch (timeframe) {
       case 'today':
-        return calculatedStats.chartData.slice(-1)
+        return data.slice(-1)
       case 'week':
-        return calculatedStats.chartData.slice(-7)
+        return data.slice(-7)
       default: // year
-        return calculatedStats.chartData
+        return data
     }
   }
 
@@ -566,7 +568,7 @@ export default function Dashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <DynamicWorldMap markers={stats.visitorLocations} />
+                      <DynamicWorldMap markers={stats.visitorLocations || []} />
                     </CardContent>
                   </Card>
 
