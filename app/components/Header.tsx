@@ -38,9 +38,7 @@ export function Header() {
     router.replace(path)
   }
 
-  const handleLogin = () => {
-    window.location.replace(`${API_URL}/auth/google`)
-  }
+
 
   const handleUpgrade = async () => {
     try {
