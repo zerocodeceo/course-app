@@ -35,7 +35,8 @@ export function Header() {
   }
 
   const handleNavigation = (path: string) => {
-    router.replace(path)
+    console.log('Navigation triggered to:', path)
+    router.push(path)
   }
 
 
