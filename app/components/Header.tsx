@@ -134,12 +134,22 @@ export function Header() {
             </Button>
           </div>
         ) : (
-          <Button 
-            onClick={handleLogin}
-            className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
-          >
-            Login
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => handleNavigation('/dashboard')}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Dashboard
+            </Button>
+            <Button 
+              onClick={handleLogin}
+              variant="outline"
+              className="whitespace-nowrap"
+            >
+              Login
+            </Button>
+          </div>
         )}
       </div>
     </nav>
