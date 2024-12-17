@@ -132,7 +132,7 @@ export default function Dashboard() {
       }
     }
     fetchCourseContent()
-  }, [user, router])
+  }, [])
 
   useEffect(() => {
     const fetchProgress = async () => {
