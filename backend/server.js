@@ -87,9 +87,9 @@ app.use(session({
   }),
   name: 'sid',
   cookie: {
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   }
@@ -102,7 +102,7 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "https://zerocodeceo.onrender.com/auth/google/callback",
     proxy: true
   },
   async function(accessToken, refreshToken, profile, cb) {
@@ -151,40 +151,65 @@ app.get('/auth/google/callback',
   }),
   async function(req, res) {
     try {
+      console.log('Google auth callback - user:', req.user ? req.user._id : 'none');
+      
+      if (!req.user) {
+        console.error('No user in request after Google authentication');
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`);
+      }
+      
       // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
       req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        res.redirect(process.env.CLIENT_URL)
+        if (err) {
+          console.error('Login error after Google auth:', err);
+          return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`);
+        }
+        
+        console.log('User successfully logged in:', req.user._id);
+        res.redirect(process.env.CLIENT_URL);
       })
     } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL}/login`)
+      console.error('Error in Google auth callback:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  if (req.isAuthenticated()) {
+  const userAgent = req.headers['user-agent'];
+  console.log('Auth status check - User Agent:', userAgent);
+  
+  console.log('Auth status check - session ID:', req.sessionID);
+  console.log('Auth status check - authenticated:', req.isAuthenticated());
+  console.log('Auth status check - session exists:', !!req.session);
+  console.log('Auth status check - user exists:', !!req.user);
+  
+  if (req.isAuthenticated() && req.user) {
     try {
       // Update last login time when checking status
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
-      })
+      });
+      
+      console.log('User found and updated:', req.user._id);
     } catch (error) {
-      console.error('Error updating lastLogin:', error)
+      console.error('Error updating lastLogin:', error);
     }
+  } else {
+    console.log('User not authenticated or missing');
   }
 
   res.json({
-    user: req.isAuthenticated() ? req.user : null,
+    user: req.isAuthenticated() && req.user ? req.user : null,
     sessionId: req.sessionID,
     sessionExists: !!req.session,
     hasUser: !!req.user,
     isAuthenticated: req.isAuthenticated()
-  })
+  });
 })
 
 app.get('/auth/logout', (req, res) => {
@@ -417,7 +442,7 @@ app.get('/course-content', async (req, res) => {
         {
           id: '7',
           title: '7. Setting Up Admin Controls & Restricting Content for Paid Users',
-          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We’ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
+          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We\'ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
           videoUrl: 'https://www.youtube.com/embed/wavULz_TSlk',
           order: 7
         },
