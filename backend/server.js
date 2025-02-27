@@ -123,22 +123,29 @@ app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login` }),
   async function(req, res) {
     try {
+      console.log('Google callback reached, user:', req.user?._id);
+      
       if (!req.user) {
-        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`)
+        console.log('No user in request');
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`);
       }
 
       // Create JWT token
       const token = jwt.sign(
         { id: req.user._id },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'your-secret-key', // Fallback for testing
         { expiresIn: '7d' }
-      )
-
+      );
+      
+      console.log('Token created, redirecting...');
+      
       // Redirect with token in URL
-      res.redirect(`${process.env.CLIENT_URL}?token=${token}`)
+      const redirectUrl = `${process.env.CLIENT_URL}?token=${token}`;
+      console.log('Redirecting to:', redirectUrl);
+      res.redirect(redirectUrl);
     } catch (error) {
-      console.error('Auth error:', error)
-      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`)
+      console.error('Auth callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
     }
   }
 )

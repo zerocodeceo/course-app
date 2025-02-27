@@ -104,18 +104,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Check URL for token parameter on load
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
-    
-    if (token) {
-      localStorage.setItem('authToken', token)
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
+    const handleAuth = async () => {
+      try {
+        // Check URL for token parameter on load
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        
+        console.log('Token in URL:', token ? 'present' : 'not present');
+        
+        if (token) {
+          console.log('Storing token...');
+          localStorage.setItem('authToken', token);
+          // Clean URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
 
-    checkAuthStatus()
-  }, [])
+        await checkAuthStatus();
+      } catch (error) {
+        console.error('Auth handling error:', error);
+        setUser(null);
+        localStorage.removeItem('authToken');
+      }
+    };
+
+    handleAuth();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>
