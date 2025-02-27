@@ -10,6 +10,8 @@ import CookieConsent from './components/CookieConsent'
 import { LocationPermission } from './components/LocationPermission'
 import ErrorBoundary from './components/ErrorBoundary'
 import { Suspense } from 'react'
+import { DebugConsole } from './components/DebugConsole'
+import { cn } from './lib/utils'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -99,7 +101,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={cn(geistSans.variable, geistMono.variable)} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="32x32" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -116,6 +118,7 @@ export default function RootLayout({
             {children}
             <ToastContainer />
             <CookieConsent />
+            <DebugConsole />
           </AuthProvider>
         </ErrorBoundary>
       </body>
