@@ -72,34 +72,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      console.log('Refreshing user data...');
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        setUser(null)
+        return
+      }
+
       const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
       })
       
-      if (!response.ok) {
-        console.error('User refresh error:', response.status, response.statusText);
-        setUser(null);
-        return;
-      }
-      
       const data = await response.json()
-      console.log('User refresh data:', data ? 'data present' : 'no data');
       
       if (data.user) {
-        console.log('User refreshed:', data.user.displayName);
         setUser(data.user)
       } else {
-        console.log('No user data in refresh response');
         setUser(null)
+        localStorage.removeItem('authToken')
       }
     } catch (error) {
-      console.error('User refresh error:', error);
+      console.error('User refresh error:', error)
       setUser(null)
+      localStorage.removeItem('authToken')
     }
   }
 

@@ -1,16 +1,23 @@
-const getApiUrl = () => {
-  if (typeof window === 'undefined') {
-    return 'https://zerocodeceo.onrender.com'
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('authToken')
+  
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    ...options.headers,
   }
 
-  const isProduction = window.location.hostname !== 'localhost' && 
-                      !window.location.hostname.includes('localhost')
-  
-  const apiUrl = isProduction 
-    ? 'https://zerocodeceo.onrender.com'
-    : 'http://localhost:8000'
+  const response = await fetch(`${API_URL}${url}`, {
+    ...options,
+    headers,
+  })
 
-  return apiUrl
+  if (!response.ok) {
+    throw new Error('API request failed')
+  }
+
+  return response.json()
 }
-
-export const API_URL = getApiUrl()

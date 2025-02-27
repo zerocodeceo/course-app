@@ -159,19 +159,31 @@ app.get('/auth/status', async (req, res) => {
 })
 
 app.get('/auth/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error logging out' })
-    }
-    res.redirect(process.env.CLIENT_URL)
-  })
+  res.json({ success: true })
 })
 
-app.post('/create-checkout-session', async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' })
-  }
+// Add this middleware function
+const authenticateToken = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    if (!token) {
+      return res.status(401).json({ error: 'Not authenticated' })
+    }
 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const user = await User.findById(decoded.id)
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' })
+    }
+
+    req.user = user
+    next()
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
+}
+
+app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -204,11 +216,7 @@ app.post('/create-checkout-session', async (req, res) => {
   }
 })
 
-app.post('/verify-payment', async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' })
-  }
-
+app.post('/verify-payment', authenticateToken, async (req, res) => {
   const { session_id } = req.body
   if (!session_id) {
     return res.status(400).json({ error: 'No session ID provided' })
@@ -332,11 +340,7 @@ app.get('/dashboard-stats', async (req, res) => {
   }
 })
 
-app.get('/course-content', async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
+app.get('/course-content', authenticateToken, async (req, res) => {
   try {
     let content = await CourseContent.find().sort('order')
     
@@ -476,11 +480,7 @@ app.put('/update-content/:id', async (req, res) => {
   }
 })
 
-app.post('/update-progress', async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
+app.post('/update-progress', authenticateToken, async (req, res) => {
   const { videoId, duration, watchedDuration, completed } = req.body
 
   try {
@@ -507,11 +507,7 @@ app.post('/update-progress', async (req, res) => {
   }
 })
 
-app.get('/user-progress', async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
+app.get('/user-progress', authenticateToken, async (req, res) => {
   try {
     const progress = await UserProgress.find({ userId: req.user._id })
     
