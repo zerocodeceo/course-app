@@ -13,25 +13,9 @@ export function Header() {
   const pathname = usePathname()
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch(`${API_URL}/auth/logout`, {
-        credentials: 'include',
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Logout failed')
-      }
-
-      await refreshUser()
-      router.replace('/')
-    } catch (error) {
-      window.location.href = `${API_URL}/auth/logout`
-    }
+    localStorage.removeItem('auth_token');
+    await refreshUser();
+    router.replace('/');
   }
 
   const handleNavigation = (path: string) => {

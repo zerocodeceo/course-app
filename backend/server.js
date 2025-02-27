@@ -157,47 +157,21 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  (req, res, next) => {
-    console.log('Pre-auth callback headers:', req.headers);
-    passport.authenticate('google', { 
-      failureRedirect: `${process.env.CLIENT_URL}/login`,
-      session: true 
-    })(req, res, next);
-  },
+  passport.authenticate('google', { 
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
+    session: false  // Disable session
+  }),
   async function(req, res) {
     try {
-      console.log('Callback received:', {
-        user: req.user?._id,
-        session: req.sessionID,
-        state: req.query.state,
-        cookies: req.headers.cookie,
-        userAgent: req.headers['user-agent']
-      });
+      const user = req.user;
+      // Create a simple token (you can use JWT if you want more security)
+      const token = Buffer.from(JSON.stringify({
+        id: user._id,
+        email: user.email
+      })).toString('base64');
 
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      })
-
-      req.login(req.user, (err) => {
-        if (err) {
-          console.error('Login error:', err);
-          return res.redirect(`${process.env.CLIENT_URL}/login`);
-        }
-        const redirectUrl = req.query.state || process.env.CLIENT_URL;
-        console.log('Redirecting to:', redirectUrl);
-        
-        // Set an additional cookie as a backup
-        res.cookie('auth_check', 'true', {
-          secure: true,
-          httpOnly: true,
-          sameSite: 'none',
-          maxAge: 24 * 60 * 60 * 1000,
-          path: '/',
-          partitioned: true
-        });
-        
-        res.redirect(redirectUrl);
-      })
+      // Redirect with token
+      res.redirect(`${process.env.CLIENT_URL}?token=${token}`);
     } catch (error) {
       console.error('Callback error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login`)
@@ -206,24 +180,27 @@ app.get('/auth/google/callback',
 )
 
 app.get('/auth/status', async (req, res) => {
-  if (req.isAuthenticated()) {
-    try {
-      // Update last login time when checking status
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      })
-    } catch (error) {
-      console.error('Error updating lastLogin:', error)
-    }
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.json({ user: null });
   }
 
-  res.json({
-    user: req.isAuthenticated() ? req.user : null,
-    sessionId: req.sessionID,
-    sessionExists: !!req.session,
-    hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated()
-  })
+  try {
+    const userData = JSON.parse(Buffer.from(token, 'base64').toString());
+    const user = await User.findById(userData.id);
+    
+    if (user) {
+      await User.findByIdAndUpdate(user._id, {
+        lastLogin: new Date()
+      });
+      res.json({ user });
+    } else {
+      res.json({ user: null });
+    }
+  } catch (error) {
+    res.json({ user: null });
+  }
 })
 
 app.get('/auth/logout', (req, res) => {

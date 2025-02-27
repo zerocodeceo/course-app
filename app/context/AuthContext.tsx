@@ -37,42 +37,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     console.log('🔍 Checking auth status...')
-    console.log('🌐 API URL:', API_URL)
-    console.log('🍪 Has Cookies:', document.cookie ? 'Yes' : 'No')
     
+    // Check for token in URL on initial load
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       })
       
-      console.log('📥 Auth status response:', {
-        status: response.status,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      })
-      
       const data = await response.json()
-      console.log('👤 Auth status data:', data)
-      console.log('🔑 Session Info:', {
-        sessionExists: data.sessionExists,
-        hasUser: data.hasUser,
-        isAuthenticated: data.isAuthenticated
-      })
       
       if (data.user) {
         console.log('✅ User authenticated:', data.user.email)
         setUser(data.user)
       } else {
         console.log('❌ No user data received')
-        console.log('🔍 Session details:', data.sessionId)
+        localStorage.removeItem('auth_token')
         setUser(null)
       }
     } catch (error) {
       console.error('🚨 Auth status error:', error)
+      localStorage.removeItem('auth_token')
       setUser(null)
     } finally {
       setLoading(false)
