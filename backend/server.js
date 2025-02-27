@@ -427,7 +427,7 @@ app.get('/course-content', async (req, res) => {
         {
           id: '7',
           title: '7. Setting Up Admin Controls & Restricting Content for Paid Users',
-          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We'll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
+          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We\'ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
           videoUrl: 'https://www.youtube.com/embed/wavULz_TSlk',
           order: 7
         },
