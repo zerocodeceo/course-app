@@ -9,18 +9,23 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   }
 
-  const response = await fetch(`${API_URL}${url}`, {
-    ...options,
-    headers,
-  })
+  try {
+    const response = await fetch(`${API_URL}${url}`, {
+      ...options,
+      headers,
+    })
 
-  if (!response.ok) {
-    throw new Error('API request failed')
+    if (!response.ok) {
+      throw new Error('API request failed')
+    }
+
+    return response.json()
+  } catch (error) {
+    console.error(`Error fetching ${url}:`, error)
+    return null
   }
-
-  return response.json()
 }

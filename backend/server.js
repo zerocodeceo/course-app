@@ -256,8 +256,11 @@ app.get('/user-stats', async (req, res) => {
       recentPremiumUsers
     })
   } catch (error) {
-    console.error('Error fetching user stats:', error)
-    res.status(500).json({ error: 'Error fetching user stats' })
+    // Return empty stats instead of error
+    res.json({
+      totalPremiumUsers: 0,
+      recentPremiumUsers: []
+    })
   }
 })
 
