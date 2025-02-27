@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const checkAuthStatus = async () => {
+    console.log('🔍 Checking auth status...')
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
@@ -45,14 +46,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       
+      console.log('📥 Auth status response:', {
+        status: response.status,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+      
       const data = await response.json()
+      console.log('👤 Auth status data:', data)
       
       if (data.user) {
+        console.log('✅ User authenticated:', data.user.email)
         setUser(data.user)
       } else {
+        console.log('❌ No user data received')
         setUser(null)
       }
     } catch (error) {
+      console.error('🚨 Auth status error:', error)
       setUser(null)
     } finally {
       setLoading(false)
