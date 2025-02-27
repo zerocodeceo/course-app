@@ -65,6 +65,15 @@ type CourseContent = {
   videoUrl: string
 }
 
+// Add this helper function at the top
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+};
+
 export default function Dashboard() {
   const { user } = useAuth()
   const router = useRouter()
@@ -105,7 +114,7 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const response = await fetch(`${API_URL}/dashboard-stats`, {
-          credentials: 'include'
+          headers: getAuthHeaders()
         })
         const data = await response.json()
         setStats(data)
@@ -119,7 +128,7 @@ export default function Dashboard() {
     const fetchCourseContent = async () => {
       try {
         const response = await fetch(`${API_URL}/course-content`, {
-          credentials: 'include'
+          headers: getAuthHeaders()
         })
         const data = await response.json()
         setCourseContent(data)
@@ -136,7 +145,7 @@ export default function Dashboard() {
     const fetchProgress = async () => {
       try {
         const response = await fetch(`${API_URL}/user-progress`, {
-          credentials: 'include'
+          headers: getAuthHeaders()
         })
         const data = await response.json()
         setProgress({
@@ -199,10 +208,7 @@ export default function Dashboard() {
       const content = courseContent.find(c => c.id === id)
       const response = await fetch(`${API_URL}/update-content/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+        headers: getAuthHeaders(),
         body: JSON.stringify(content)
       })
       
@@ -222,7 +228,7 @@ export default function Dashboard() {
     try {
       const response = await fetch(`${API_URL}/create-checkout-session`, {
         method: 'POST',
-        credentials: 'include',
+        headers: getAuthHeaders()
       })
       const data = await response.json()
       
@@ -238,10 +244,7 @@ export default function Dashboard() {
     try {
       const response = await fetch(`${API_URL}/update-progress`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           videoId,
           duration: progress.duration,

@@ -298,7 +298,30 @@ app.get('/user-stats', async (req, res) => {
   }
 })
 
-app.get('/dashboard-stats', async (req, res) => {
+const authenticateToken = async (req, res, next) => {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' })
+  }
+
+  try {
+    const userData = JSON.parse(Buffer.from(token, 'base64').toString())
+    const user = await User.findById(userData.id)
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
+    req.user = user
+    next()
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid token' })
+  }
+}
+
+app.get('/dashboard-stats', authenticateToken, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -377,7 +400,7 @@ app.get('/dashboard-stats', async (req, res) => {
   }
 })
 
-app.get('/course-content', async (req, res) => {
+app.get('/course-content', authenticateToken, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
