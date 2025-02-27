@@ -85,7 +85,7 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL || "https://zerocodeceo.onrender.com/auth/google/callback",
     proxy: true
   },
-  async function(accessToken, refreshToken, profile, cb) {
+  async function(accessToken, refreshToken, profile, done) {
     try {
       let user = await User.findOne({ googleId: profile.id })
       
@@ -99,50 +99,36 @@ passport.use(new GoogleStrategy({
         })
       }
       
-      return cb(null, user)
+      return done(null, user)
     } catch (error) {
-      return cb(error, null)
+      return done(error, null)
     }
   }
 ))
 
-passport.serializeUser((user, done) => {
-  done(null, user)
-})
-
-passport.deserializeUser((user, done) => {
-  done(null, user)
-})
-
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login` }),
+  passport.authenticate('google', { 
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/login` 
+  }),
   async function(req, res) {
     try {
-      console.log('Google callback reached, user:', req.user?._id);
-      
       if (!req.user) {
-        console.log('No user in request');
         return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`);
       }
 
-      // Create JWT token
       const token = jwt.sign(
         { id: req.user._id },
-        process.env.JWT_SECRET || 'your-secret-key', // Fallback for testing
+        process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '7d' }
       );
       
-      console.log('Token created, redirecting...');
-      
-      // Redirect with token in URL
-      const redirectUrl = `${process.env.CLIENT_URL}?token=${token}`;
-      console.log('Redirecting to:', redirectUrl);
-      res.redirect(redirectUrl);
+      res.redirect(`${process.env.CLIENT_URL}?token=${token}`);
     } catch (error) {
       console.error('Auth callback error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
