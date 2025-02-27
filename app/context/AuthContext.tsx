@@ -37,17 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      // Get token from localStorage
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-
       const response = await fetch(`${API_URL}/auth/status`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
@@ -59,12 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
       } else {
         setUser(null)
-        localStorage.removeItem('authToken')
       }
     } catch (error) {
-      console.error('Auth check error:', error)
       setUser(null)
-      localStorage.removeItem('authToken')
     } finally {
       setLoading(false)
     }
@@ -72,61 +61,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        setUser(null)
-        return
-      }
-
       const response = await fetch(`${API_URL}/auth/status`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
       })
       
       const data = await response.json()
-      
       if (data.user) {
         setUser(data.user)
       } else {
         setUser(null)
-        localStorage.removeItem('authToken')
       }
     } catch (error) {
-      console.error('User refresh error:', error)
       setUser(null)
-      localStorage.removeItem('authToken')
     }
   }
 
   useEffect(() => {
-    const handleAuth = async () => {
-      try {
-        // Check URL for token parameter on load
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        
-        console.log('Token in URL:', token ? 'present' : 'not present');
-        
-        if (token) {
-          console.log('Storing token...');
-          localStorage.setItem('authToken', token);
-          // Clean URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        await checkAuthStatus();
-      } catch (error) {
-        console.error('Auth handling error:', error);
-        setUser(null);
-        localStorage.removeItem('authToken');
-      }
-    };
-
-    handleAuth();
-  }, []);
+    checkAuthStatus()
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>

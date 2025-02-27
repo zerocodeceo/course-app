@@ -1,5 +1,7 @@
 require('dotenv').config()
 const express = require('express')
+const session = require('express-session')
+const MongoStore = require('connect-mongo')
 const passport = require('passport')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -9,7 +11,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
-const jwt = require('jsonwebtoken')
 
 const app = express()
 app.set('trust proxy', 1)
@@ -76,16 +77,35 @@ app.use((req, res, next) => {
   next();
 })
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60
+  }),
+  name: 'sid',
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/'
+  }
+}))
+
 app.use(passport.initialize())
+app.use(passport.session())
 
 // Passport configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || "https://zerocodeceo.onrender.com/auth/google/callback",
+    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
     proxy: true
   },
-  async function(accessToken, refreshToken, profile, done) {
+  async function(accessToken, refreshToken, profile, cb) {
     try {
       let user = await User.findOne({ googleId: profile.id })
       
@@ -99,91 +119,88 @@ passport.use(new GoogleStrategy({
         })
       }
       
-      return done(null, user)
+      return cb(null, user)
     } catch (error) {
-      return done(error, null)
+      return cb(error, null)
     }
   }
 ))
 
+passport.serializeUser((user, done) => {
+  done(null, user.id)
+})
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id)
+    done(null, user)
+  } catch (error) {
+    done(error, null)
+  }
+})
+
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+  passport.authenticate('google', { scope: ['profile', 'email'] })
 )
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    session: false,
-    failureRedirect: `${process.env.CLIENT_URL}/login` 
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
+    session: true 
   }),
   async function(req, res) {
     try {
-      if (!req.user) {
-        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`);
-      }
+      // Update last login time
+      await User.findByIdAndUpdate(req.user._id, {
+        lastLogin: new Date()
+      })
 
-      const token = jwt.sign(
-        { id: req.user._id },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '7d' }
-      );
-      
-      res.redirect(`${process.env.CLIENT_URL}?token=${token}`);
+      req.login(req.user, (err) => {
+        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
+        res.redirect(process.env.CLIENT_URL)
+      })
     } catch (error) {
-      console.error('Auth callback error:', error);
-      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
+      res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1]
-    
-    if (!token) {
-      return res.json({ user: null })
+  if (req.isAuthenticated()) {
+    try {
+      // Update last login time when checking status
+      await User.findByIdAndUpdate(req.user._id, {
+        lastLogin: new Date()
+      })
+    } catch (error) {
+      console.error('Error updating lastLogin:', error)
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.id)
-    
-    if (!user) {
-      return res.json({ user: null })
-    }
-
-    res.json({ user })
-  } catch (error) {
-    console.error('Auth status error:', error)
-    res.json({ user: null })
   }
+
+  res.json({
+    user: req.isAuthenticated() ? req.user : null,
+    sessionId: req.sessionID,
+    sessionExists: !!req.session,
+    hasUser: !!req.user,
+    isAuthenticated: req.isAuthenticated()
+  })
 })
 
 app.get('/auth/logout', (req, res) => {
-  res.json({ success: true })
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error logging out' })
+    }
+    res.redirect(process.env.CLIENT_URL)
+  })
 })
 
-// Add this middleware function
-const authenticateToken = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1]
-    if (!token) {
-      return res.status(401).json({ error: 'Not authenticated' })
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.id)
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' })
-    }
-
-    req.user = user
-    next()
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' })
+app.post('/create-checkout-session', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' })
   }
-}
 
-app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -216,7 +233,11 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   }
 })
 
-app.post('/verify-payment', authenticateToken, async (req, res) => {
+app.post('/verify-payment', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' })
+  }
+
   const { session_id } = req.body
   if (!session_id) {
     return res.status(400).json({ error: 'No session ID provided' })
@@ -256,11 +277,8 @@ app.get('/user-stats', async (req, res) => {
       recentPremiumUsers
     })
   } catch (error) {
-    // Return empty stats instead of error
-    res.json({
-      totalPremiumUsers: 0,
-      recentPremiumUsers: []
-    })
+    console.error('Error fetching user stats:', error)
+    res.status(500).json({ error: 'Error fetching user stats' })
   }
 })
 
@@ -343,7 +361,11 @@ app.get('/dashboard-stats', async (req, res) => {
   }
 })
 
-app.get('/course-content', authenticateToken, async (req, res) => {
+app.get('/course-content', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
     let content = await CourseContent.find().sort('order')
     
@@ -395,7 +417,7 @@ app.get('/course-content', authenticateToken, async (req, res) => {
         {
           id: '7',
           title: '7. Setting Up Admin Controls & Restricting Content for Paid Users',
-          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We\'ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
+          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We’ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
           videoUrl: 'https://www.youtube.com/embed/wavULz_TSlk',
           order: 7
         },
@@ -483,7 +505,11 @@ app.put('/update-content/:id', async (req, res) => {
   }
 })
 
-app.post('/update-progress', authenticateToken, async (req, res) => {
+app.post('/update-progress', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   const { videoId, duration, watchedDuration, completed } = req.body
 
   try {
@@ -510,7 +536,11 @@ app.post('/update-progress', authenticateToken, async (req, res) => {
   }
 })
 
-app.get('/user-progress', authenticateToken, async (req, res) => {
+app.get('/user-progress', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
     const progress = await UserProgress.find({ userId: req.user._id })
     
