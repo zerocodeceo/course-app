@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useAuth } from '../context/AuthContext'
 import { useRouter, usePathname } from 'next/navigation'
 import { navItems } from './MainLayout'
-import { API_URL } from '../lib/api'
+import { API_URL, getCallbackUrl } from '../lib/api'
 
 export function Header() {
   const { user, refreshUser } = useAuth()
@@ -40,9 +40,10 @@ export function Header() {
 
   const handleLogin = () => {
     console.log('🔐 Initiating Google login...')
-    console.log('📍 Current URL:', window.location.href)
-    console.log('🎯 Redirecting to:', `${API_URL}/auth/google`)
-    window.location.replace(`${API_URL}/auth/google`)
+    const callbackUrl = encodeURIComponent(`${getCallbackUrl()}`)
+    const loginUrl = `${API_URL}/auth/google?callback=${callbackUrl}`
+    console.log('🎯 Redirecting to:', loginUrl)
+    window.location.replace(loginUrl)
   }
 
   const handleUpgrade = async () => {

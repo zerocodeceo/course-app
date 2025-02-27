@@ -74,6 +74,8 @@ app.use(cors({
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
+  res.header('Vary', 'Origin');
+  res.header('Cache-Control', 'no-cache="Set-Cookie, Set-Cookie2"');
   next();
 })
 
@@ -90,6 +92,7 @@ app.use(session({
     secure: true,
     httpOnly: true,
     sameSite: 'none',
+    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined,
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   }
@@ -103,9 +106,10 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
+    passReqToCallback: true,
     proxy: true
   },
-  async function(accessToken, refreshToken, profile, cb) {
+  async function(req, accessToken, refreshToken, profile, cb) {
     try {
       let user = await User.findOne({ googleId: profile.id })
       
@@ -141,7 +145,13 @@ passport.deserializeUser(async (id, done) => {
 
 // Routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  (req, res, next) => {
+    const state = req.query.callback || process.env.CLIENT_URL
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'],
+      state
+    })(req, res, next)
+  }
 )
 
 app.get('/auth/google/callback', 
@@ -151,14 +161,14 @@ app.get('/auth/google/callback',
   }),
   async function(req, res) {
     try {
-      // Update last login time
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
       req.login(req.user, (err) => {
         if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        res.redirect(process.env.CLIENT_URL)
+        const redirectUrl = req.query.state || process.env.CLIENT_URL
+        res.redirect(redirectUrl)
       })
     } catch (error) {
       res.redirect(`${process.env.CLIENT_URL}/login`)
@@ -417,7 +427,7 @@ app.get('/course-content', async (req, res) => {
         {
           id: '7',
           title: '7. Setting Up Admin Controls & Restricting Content for Paid Users',
-          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We’ll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
+          description: 'In this video, you will learn how to create an admin account and implement restrictions to ensure that only paid users can access premium content. We'll cover user roles, permissions, and securing your content behind the paywall for a seamless experience.',
           videoUrl: 'https://www.youtube.com/embed/wavULz_TSlk',
           order: 7
         },
