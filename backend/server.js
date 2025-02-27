@@ -68,7 +68,7 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
-  exposedHeaders: ['Set-Cookie']
+  exposedHeaders: ['Set-Cookie', 'Authorization']
 }))
 
 app.use((req, res, next) => {
@@ -92,7 +92,6 @@ app.use(session({
     secure: true,
     httpOnly: true,
     sameSite: 'none',
-    domain: process.env.NODE_ENV === 'production' ? '.zerocodeceo.com' : undefined,
     maxAge: 24 * 60 * 60 * 1000,
     path: '/'
   }
@@ -105,7 +104,7 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
+    callbackURL: "/auth/google/callback",
     passReqToCallback: true,
     proxy: true
   },
@@ -161,16 +160,27 @@ app.get('/auth/google/callback',
   }),
   async function(req, res) {
     try {
+      console.log('Callback received:', {
+        user: req.user?._id,
+        session: req.sessionID,
+        state: req.query.state
+      });
+
       await User.findByIdAndUpdate(req.user._id, {
         lastLogin: new Date()
       })
 
       req.login(req.user, (err) => {
-        if (err) return res.redirect(`${process.env.CLIENT_URL}/login`)
-        const redirectUrl = req.query.state || process.env.CLIENT_URL
-        res.redirect(redirectUrl)
+        if (err) {
+          console.error('Login error:', err);
+          return res.redirect(`${process.env.CLIENT_URL}/login`);
+        }
+        const redirectUrl = req.query.state || process.env.CLIENT_URL;
+        console.log('Redirecting to:', redirectUrl);
+        res.redirect(redirectUrl);
       })
     } catch (error) {
+      console.error('Callback error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login`)
     }
   }
