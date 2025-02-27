@@ -41,6 +41,7 @@ export function Header() {
   const handleLogin = () => {
     console.log('🔐 Initiating Google login...')
     console.log('📍 Current URL:', window.location.href)
+    console.log('🎯 Redirecting to:', `${API_URL}/auth/google`)
     window.location.replace(`${API_URL}/auth/google`)
   }
 

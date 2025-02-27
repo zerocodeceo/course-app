@@ -37,6 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     console.log('🔍 Checking auth status...')
+    console.log('🌐 API URL:', API_URL)
+    console.log('🍪 Has Cookies:', document.cookie ? 'Yes' : 'No')
+    
     try {
       const response = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
@@ -54,12 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const data = await response.json()
       console.log('👤 Auth status data:', data)
+      console.log('🔑 Session Info:', {
+        sessionExists: data.sessionExists,
+        hasUser: data.hasUser,
+        isAuthenticated: data.isAuthenticated
+      })
       
       if (data.user) {
         console.log('✅ User authenticated:', data.user.email)
         setUser(data.user)
       } else {
         console.log('❌ No user data received')
+        console.log('🔍 Session details:', data.sessionId)
         setUser(null)
       }
     } catch (error) {
