@@ -37,37 +37,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status...');
+      // Get token from localStorage
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
       const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         }
       })
       
-      console.log('Auth status response:', response.status);
-      
-      if (!response.ok) {
-        console.error('Auth status error:', response.status, response.statusText);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
       const data = await response.json()
-      console.log('Auth data received:', data ? 'data present' : 'no data');
       
       if (data.user) {
-        console.log('User authenticated:', data.user.displayName);
         setUser(data.user)
       } else {
-        console.log('No user data in response');
         setUser(null)
+        localStorage.removeItem('authToken')
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error('Auth check error:', error)
       setUser(null)
+      localStorage.removeItem('authToken')
     } finally {
       setLoading(false)
     }
@@ -107,14 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Log browser information to help with debugging
-    const browserInfo = {
-      userAgent: navigator.userAgent,
-      cookiesEnabled: navigator.cookieEnabled,
-      platform: navigator.platform
-    };
-    console.log('Browser info:', browserInfo);
+    // Check URL for token parameter on load
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('token')
     
+    if (token) {
+      localStorage.setItem('authToken', token)
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
     checkAuthStatus()
   }, [])
 

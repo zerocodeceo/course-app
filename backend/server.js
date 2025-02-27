@@ -1,7 +1,5 @@
 require('dotenv').config()
 const express = require('express')
-const session = require('express-session')
-const MongoStore = require('connect-mongo')
 const passport = require('passport')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -11,6 +9,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const CourseContent = require('./models/CourseContent')
 const UserProgress = require('./models/UserProgress')
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+const jwt = require('jsonwebtoken')
 
 const app = express()
 app.set('trust proxy', 1)
@@ -77,26 +76,7 @@ app.use((req, res, next) => {
   next();
 })
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60
-  }),
-  name: 'sid',
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
-  }
-}))
-
 app.use(passport.initialize())
-app.use(passport.session())
 
 // Passport configuration
 passport.use(new GoogleStrategy({
@@ -127,16 +107,11 @@ passport.use(new GoogleStrategy({
 ))
 
 passport.serializeUser((user, done) => {
-  done(null, user.id)
+  done(null, user)
 })
 
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id)
-    done(null, user)
-  } catch (error) {
-    done(error, null)
-  }
+passport.deserializeUser((user, done) => {
+  done(null, user)
 })
 
 // Routes
@@ -145,71 +120,49 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
-  }),
+  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login` }),
   async function(req, res) {
     try {
-      console.log('Google auth callback - user:', req.user ? req.user._id : 'none');
-      
       if (!req.user) {
-        console.error('No user in request after Google authentication');
-        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`);
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=no_user`)
       }
-      
-      // Update last login time
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      })
 
-      req.login(req.user, (err) => {
-        if (err) {
-          console.error('Login error after Google auth:', err);
-          return res.redirect(`${process.env.CLIENT_URL}/login?error=login_failed`);
-        }
-        
-        console.log('User successfully logged in:', req.user._id);
-        res.redirect(process.env.CLIENT_URL);
-      })
+      // Create JWT token
+      const token = jwt.sign(
+        { id: req.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      )
+
+      // Redirect with token in URL
+      res.redirect(`${process.env.CLIENT_URL}?token=${token}`)
     } catch (error) {
-      console.error('Error in Google auth callback:', error);
-      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
+      console.error('Auth error:', error)
+      res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`)
     }
   }
 )
 
 app.get('/auth/status', async (req, res) => {
-  const userAgent = req.headers['user-agent'];
-  console.log('Auth status check - User Agent:', userAgent);
-  
-  console.log('Auth status check - session ID:', req.sessionID);
-  console.log('Auth status check - authenticated:', req.isAuthenticated());
-  console.log('Auth status check - session exists:', !!req.session);
-  console.log('Auth status check - user exists:', !!req.user);
-  
-  if (req.isAuthenticated() && req.user) {
-    try {
-      // Update last login time when checking status
-      await User.findByIdAndUpdate(req.user._id, {
-        lastLogin: new Date()
-      });
-      
-      console.log('User found and updated:', req.user._id);
-    } catch (error) {
-      console.error('Error updating lastLogin:', error);
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.json({ user: null })
     }
-  } else {
-    console.log('User not authenticated or missing');
-  }
 
-  res.json({
-    user: req.isAuthenticated() && req.user ? req.user : null,
-    sessionId: req.sessionID,
-    sessionExists: !!req.session,
-    hasUser: !!req.user,
-    isAuthenticated: req.isAuthenticated()
-  });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const user = await User.findById(decoded.id)
+    
+    if (!user) {
+      return res.json({ user: null })
+    }
+
+    res.json({ user })
+  } catch (error) {
+    console.error('Auth status error:', error)
+    res.json({ user: null })
+  }
 })
 
 app.get('/auth/logout', (req, res) => {
