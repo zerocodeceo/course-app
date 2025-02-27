@@ -68,7 +68,8 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
-  exposedHeaders: ['Set-Cookie', 'Authorization']
+  exposedHeaders: ['Set-Cookie', 'Authorization'],
+  maxAge: 86400
 }))
 
 app.use((req, res, next) => {
@@ -76,6 +77,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Set-Cookie');
   res.header('Vary', 'Origin');
   res.header('Cache-Control', 'no-cache="Set-Cookie, Set-Cookie2"');
+  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 })
 
@@ -93,7 +95,8 @@ app.use(session({
     httpOnly: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/'
+    path: '/',
+    partitioned: true
   }
 }))
 
@@ -104,7 +107,7 @@ app.use(passport.session())
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback",
+    callbackURL: "https://zerocodeceo.onrender.com/auth/google/callback",
     passReqToCallback: true,
     proxy: true
   },
@@ -154,16 +157,21 @@ app.get('/auth/google',
 )
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
-    session: true 
-  }),
+  (req, res, next) => {
+    console.log('Pre-auth callback headers:', req.headers);
+    passport.authenticate('google', { 
+      failureRedirect: `${process.env.CLIENT_URL}/login`,
+      session: true 
+    })(req, res, next);
+  },
   async function(req, res) {
     try {
       console.log('Callback received:', {
         user: req.user?._id,
         session: req.sessionID,
-        state: req.query.state
+        state: req.query.state,
+        cookies: req.headers.cookie,
+        userAgent: req.headers['user-agent']
       });
 
       await User.findByIdAndUpdate(req.user._id, {
@@ -177,6 +185,17 @@ app.get('/auth/google/callback',
         }
         const redirectUrl = req.query.state || process.env.CLIENT_URL;
         console.log('Redirecting to:', redirectUrl);
+        
+        // Set an additional cookie as a backup
+        res.cookie('auth_check', 'true', {
+          secure: true,
+          httpOnly: true,
+          sameSite: 'none',
+          maxAge: 24 * 60 * 60 * 1000,
+          path: '/',
+          partitioned: true
+        });
+        
         res.redirect(redirectUrl);
       })
     } catch (error) {
