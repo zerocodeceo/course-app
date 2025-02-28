@@ -10,7 +10,6 @@ import CookieConsent from './components/CookieConsent'
 import { LocationPermission } from './components/LocationPermission'
 import ErrorBoundary from './components/ErrorBoundary'
 import { Suspense } from 'react'
-import { DebugConsole } from './components/DebugConsole'
 import { cn } from './lib/utils'
 
 const geistSans = localFont({
@@ -118,7 +117,6 @@ export default function RootLayout({
             {children}
             <ToastContainer />
             <CookieConsent />
-            <DebugConsole />
           </AuthProvider>
         </ErrorBoundary>
       </body>
