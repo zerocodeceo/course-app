@@ -213,11 +213,21 @@ app.get('/auth/logout', (req, res) => {
 })
 
 app.post('/create-checkout-session', async (req, res) => {
-  if (!req.user) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (!token) {
     return res.status(401).json({ error: 'Not authenticated' })
   }
 
   try {
+    const userData = JSON.parse(Buffer.from(token, 'base64').toString())
+    const user = await User.findById(userData.id)
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -236,9 +246,9 @@ app.post('/create-checkout-session', async (req, res) => {
       mode: 'payment',
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}`,
-      customer_email: req.user.email,
+      customer_email: user.email,
       metadata: {
-        userId: req.user._id.toString()
+        userId: user._id.toString()
       }
     })
 

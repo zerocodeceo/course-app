@@ -226,9 +226,13 @@ export default function Dashboard() {
 
   const handleUpgrade = async () => {
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`${API_URL}/create-checkout-session`, {
         method: 'POST',
-        headers: getAuthHeaders()
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       })
       const data = await response.json()
       
