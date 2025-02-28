@@ -206,9 +206,13 @@ export default function Dashboard() {
   const handleSaveContent = async (id: string) => {
     try {
       const content = courseContent.find(c => c.id === id)
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`${API_URL}/update-content/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(content)
       })
       
@@ -246,9 +250,13 @@ export default function Dashboard() {
 
   const handleVideoProgress = async (videoId: string, progress: { duration: number, watched: number, completed: boolean }) => {
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`${API_URL}/update-progress`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           videoId,
           duration: progress.duration,
@@ -626,14 +634,6 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
-      {user?.email === 'bbertapeli@gmail.com' && (
-        <Button
-          onClick={() => router.push('/success?test=true')}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          Test Success Page
-        </Button>
-      )}
     </MainLayout>
   )
 } 

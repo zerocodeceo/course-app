@@ -260,7 +260,10 @@ app.post('/create-checkout-session', async (req, res) => {
 })
 
 app.post('/verify-payment', async (req, res) => {
-  if (!req.user) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (!token) {
     return res.status(401).json({ error: 'Not authenticated' })
   }
 
@@ -270,17 +273,21 @@ app.post('/verify-payment', async (req, res) => {
   }
 
   try {
+    const userData = JSON.parse(Buffer.from(token, 'base64').toString())
+    const user = await User.findById(userData.id)
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
     const session = await stripe.checkout.sessions.retrieve(session_id)
     console.log('Payment session:', session)
 
-    if (session.payment_status === 'paid' && session.metadata.userId === req.user._id.toString()) {
-      const user = await User.findById(req.user._id)
-      if (user) {
-        user.plan = 'premium'
-        user.purchaseDate = new Date()
-        await user.save()
-        return res.json({ success: true })
-      }
+    if (session.payment_status === 'paid' && session.metadata.userId === user._id.toString()) {
+      user.plan = 'premium'
+      user.purchaseDate = new Date()
+      await user.save()
+      return res.json({ success: true })
     }
 
     throw new Error('Invalid payment session')
