@@ -8,11 +8,12 @@ export function LocationPermission() {
 
   const saveUserLocation = async (position: GeolocationPosition) => {
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`${API_URL}/update-location`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           coordinates: {

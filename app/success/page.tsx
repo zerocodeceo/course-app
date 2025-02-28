@@ -60,11 +60,12 @@ function SuccessContent() {
       }
 
       try {
+        const token = localStorage.getItem('auth_token')
         const response = await fetch(`${API_URL}/verify-payment`, {
           method: 'POST',
-          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ session_id }),
         })

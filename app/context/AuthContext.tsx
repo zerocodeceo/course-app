@@ -86,11 +86,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        setUser(null)
+        return
+      }
+
       const response = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       })
       
@@ -98,9 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         setUser(data.user)
       } else {
+        localStorage.removeItem('auth_token')
         setUser(null)
       }
     } catch (error) {
+      localStorage.removeItem('auth_token')
       setUser(null)
     }
   }

@@ -20,8 +20,12 @@ export function useUserStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const token = localStorage.getItem('auth_token')
         const response = await fetch(`${API_URL}/user-stats`, {
-          credentials: 'include'
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
         })
         const data = await response.json()
         setStats(data)
